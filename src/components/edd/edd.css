@@ -1,0 +1,1013 @@
+/* =========================================================================
+   EDD drawer styles — scoped port of app-edd/src/styles/{tokens,global,edd}.css
+   -------------------------------------------------------------------------
+   Every selector is prefixed with `.edd-root` so the generic prototype class
+   names (.btn, .card, .panel, .pill, .form-input, .textarea …) cannot leak
+   into the admin Tailwind layer (architecture §5). The [data-theme] theme
+   blocks are dropped — admin is single-theme — and the prototype color tokens
+   are bridged to the Interro green custom properties from globals.css.
+   Only console (A2/A3/A4) styles are ported; the recipient collection flow
+   (B0–B4) is deferred (TODO(E3-recipient)).
+   ========================================================================= */
+
+.edd-root {
+  /* shape tokens kept from prototype tokens.css */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-phone: 0 4px 24px rgba(0, 0, 0, 0.12);
+
+  /* gray + status scale kept from prototype */
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-error: #ef4444;
+  --color-failure: #ef4444;
+  --color-orange: #f59e0b;
+  --color-green: #22c55e;
+
+  /* ── Interro Green bridge (= globals.css :root) ── */
+  --color-primary: var(--interro-primary); /* #123524 */
+  --color-primary-hover: var(--interro-primary-hover); /* #0c2418 */
+  --color-primary-soft: var(--interro-primary-soft); /* #E6F0EA */
+  --color-accent: var(--interro-accent); /* #339966 */
+  --color-accent-soft: var(--interro-accent-soft); /* #EEF7F1 */
+  --color-text: var(--interro-text); /* #18181B */
+  --color-heading: var(--interro-heading); /* #123524 */
+  --color-success: var(--interro-accent);
+  --color-info-soft: var(--interro-accent-soft);
+  --color-border: #e2e8f0;
+  --color-border-light: #f1f5f9;
+  --color-bg: #f8fafc;
+  --color-white: #ffffff;
+  --color-role-badge: #0891b2;
+  --font-family: "Aptos", "Segoe UI", -apple-system, sans-serif;
+  --font-heading: "Aptos", "Segoe UI", -apple-system, sans-serif;
+
+  font-family: var(--font-family);
+  color: var(--color-text);
+}
+
+.edd-root *,
+.edd-root *::before,
+.edd-root *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+/* ---- Console shell --------------------------------------------------- */
+.edd-root .console {
+  width: 100%;
+  max-width: 920px;
+  margin: 0 auto;
+  padding: 32px 24px 64px;
+}
+
+.edd-root .console-eyebrow {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  color: var(--color-accent);
+  margin-bottom: 6px;
+}
+
+.edd-root .console h1 {
+  font-size: 26px;
+  margin-bottom: 6px;
+  color: var(--color-heading);
+  line-height: 1.3;
+}
+.edd-root .console .console-lead {
+  font-size: 15px;
+  color: var(--color-text);
+  margin-bottom: 28px;
+  line-height: 1.5;
+}
+
+.edd-root .console-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-accent);
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  margin-bottom: 18px;
+  font-family: var(--font-family);
+}
+.edd-root .console-back:hover {
+  text-decoration: underline;
+}
+
+/* ---- Status / risk pills -------------------------------------------- */
+.edd-root .pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.edd-root .pill.idle {
+  background: var(--color-gray-100);
+  color: var(--color-gray-500);
+}
+.edd-root .pill.review {
+  background: #fef3c7;
+  color: #b45309;
+}
+.edd-root .pill.sent {
+  background: var(--color-primary-soft);
+  color: var(--color-primary);
+}
+.edd-root .pill.submitted {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+.edd-root .pill.approved {
+  background: #dcfce7;
+  color: #15803d;
+}
+.edd-root .pill.denied {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+/* ---- Console panels -------------------------------------------------- */
+.edd-root .panel {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 22px;
+  margin-bottom: 20px;
+}
+.edd-root .panel-title {
+  font-size: 13px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+  color: var(--color-gray-500);
+  margin-bottom: 14px;
+}
+
+.edd-root .kv-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 24px;
+}
+.edd-root .kv-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-gray-500);
+  margin-bottom: 3px;
+}
+.edd-root .kv-value {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+
+.edd-root .reason-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.edd-root .reason-list li {
+  display: flex;
+  gap: 10px;
+  font-size: 14px;
+  color: var(--color-text);
+  line-height: 1.45;
+}
+.edd-root .reason-list li::before {
+  content: "▲";
+  color: var(--color-orange);
+  font-size: 11px;
+  margin-top: 3px;
+  flex-shrink: 0;
+}
+
+.edd-root .alloy-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 16px;
+  background: #fef3c7;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  margin-bottom: 20px;
+}
+.edd-root .alloy-banner .alloy-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-orange);
+  flex-shrink: 0;
+}
+.edd-root .alloy-banner-text {
+  font-size: 13px;
+  color: #92400e;
+  line-height: 1.4;
+}
+.edd-root .alloy-banner-text strong {
+  color: #78350f;
+}
+
+/* ---- Item picker ----------------------------------------------------- */
+.edd-root .item-cat-title {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-gray-400);
+  margin: 18px 0 8px;
+}
+.edd-root .item-cat-title:first-child {
+  margin-top: 0;
+}
+
+.edd-root .item-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.edd-root .item-row:hover {
+  border-color: var(--color-primary);
+}
+.edd-root .item-row.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.edd-root .item-check {
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
+  border: 2px solid var(--color-border);
+  background: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  color: var(--color-white);
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+.edd-root .item-row.selected .item-check {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.edd-root .item-body {
+  flex: 1;
+  min-width: 0;
+}
+.edd-root .item-label-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.edd-root .item-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+.edd-root .item-kind-tag {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: var(--color-gray-100);
+  color: var(--color-gray-500);
+}
+.edd-root .item-kind-tag.document {
+  background: var(--color-accent-soft);
+  color: var(--color-accent);
+}
+.edd-root .item-recommended {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 7px;
+  border-radius: var(--radius-full);
+  background: #fef3c7;
+  color: #b45309;
+}
+.edd-root .item-desc {
+  font-size: 12.5px;
+  color: var(--color-gray-500);
+  margin-top: 3px;
+  line-height: 1.4;
+}
+
+/* ---- Recipient choice ------------------------------------------------ */
+.edd-root .recipient-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+}
+@media (max-width: 640px) {
+  .edd-root .recipient-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.edd-root .recipient-card {
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 18px;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.edd-root .recipient-card:hover {
+  border-color: var(--color-primary);
+}
+.edd-root .recipient-card.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.edd-root .recipient-card .rc-role {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-accent);
+  margin-bottom: 6px;
+}
+.edd-root .recipient-card .rc-name {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-heading);
+}
+.edd-root .recipient-card .rc-detail {
+  font-size: 13px;
+  color: var(--color-gray-500);
+  margin-top: 2px;
+}
+.edd-root .recipient-card .rc-explain {
+  font-size: 12px;
+  color: var(--color-text);
+  margin-top: 10px;
+  line-height: 1.45;
+}
+
+.edd-root .textarea {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family);
+  font-size: 14px;
+  color: var(--color-heading);
+  resize: vertical;
+  min-height: 80px;
+  outline: none;
+}
+.edd-root .textarea:focus {
+  border-color: var(--color-primary);
+}
+
+/* ---- Generated link box --------------------------------------------- */
+.edd-root .link-box {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  background: var(--color-gray-100);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: 13px;
+  color: var(--color-heading);
+  word-break: break-all;
+}
+.edd-root .link-box code {
+  flex: 1;
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 12.5px;
+}
+
+/* ---- Timeline -------------------------------------------------------- */
+.edd-root .timeline {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+.edd-root .timeline li {
+  display: flex;
+  gap: 12px;
+  padding-bottom: 16px;
+  position: relative;
+}
+.edd-root .timeline li:not(:last-child)::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 18px;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+.edd-root .timeline .tl-dot {
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  flex-shrink: 0;
+  margin-top: 2px;
+  border: 3px solid var(--color-primary-soft);
+}
+.edd-root .timeline .tl-label {
+  font-size: 13.5px;
+  color: var(--color-heading);
+  font-weight: 500;
+}
+.edd-root .timeline .tl-time {
+  font-size: 11px;
+  color: var(--color-gray-400);
+  margin-top: 1px;
+}
+
+/* ---- Requested-items checklist (A4) ---------------------------------- */
+.edd-root .requested-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.edd-root .requested-item:last-child {
+  border-bottom: none;
+}
+.edd-root .requested-item .ri-icon {
+  width: 36px;
+  height: 36px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  flex-shrink: 0;
+}
+.edd-root .requested-item .ri-label {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-heading);
+}
+.edd-root .requested-item .ri-desc {
+  font-size: 12.5px;
+  color: var(--color-gray-500);
+  margin-top: 2px;
+  line-height: 1.4;
+}
+
+/* ---- Buttons --------------------------------------------------------- */
+.edd-root .btn {
+  width: 100%;
+  padding: 14px 24px;
+  border-radius: var(--radius-full);
+  font-family: var(--font-family);
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  border: 2px solid transparent;
+  min-height: 48px;
+}
+.edd-root .btn-primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+.edd-root .btn-primary:hover {
+  background: var(--color-primary-hover);
+  border-color: var(--color-primary-hover);
+}
+.edd-root .btn-secondary {
+  background: var(--color-white);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+}
+.edd-root .btn-secondary:hover {
+  background: var(--color-primary-soft);
+}
+.edd-root .btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.edd-root .btn-small {
+  padding: 8px 16px;
+  font-size: 13px;
+  width: auto;
+  min-height: 36px;
+  border-radius: var(--radius-full);
+}
+.edd-root .btn-small.btn-secondary {
+  background: white;
+  color: var(--color-heading);
+  border-color: var(--color-border);
+}
+
+.edd-root .console .btn {
+  width: auto;
+  min-width: 200px;
+}
+.edd-root .console-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-top: 8px;
+}
+.edd-root .console-summary-line {
+  font-size: 13px;
+  color: var(--color-gray-500);
+  margin-top: 12px;
+}
+
+.edd-root .empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--color-gray-400);
+}
+
+.edd-root .emoji-deco {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  font-style: normal;
+}
+.edd-root .emoji-fallback {
+  display: none;
+}
+
+/* =========================================================================
+   B.3 — End-user collection flow (kept in app-edd visual style)
+   Ported from app-edd/src/styles/global.css, scoped under .edd-root.
+   ========================================================================= */
+
+/* ---- Preview chrome (demo only — B.0 / B.3) -------------------------- */
+.edd-root .edd-preview-shell {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  padding: 24px 16px 48px;
+}
+.edd-root .edd-preview-note {
+  width: 100%;
+  max-width: 420px;
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  padding: 12px 14px;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: var(--radius-sm);
+  font-size: 12.5px;
+  color: #92400e;
+  line-height: 1.45;
+}
+.edd-root .edd-preview-note strong {
+  color: #78350f;
+}
+.edd-root .edd-preview-close {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-gray-500);
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  padding: 6px 14px;
+  cursor: pointer;
+}
+.edd-root .edd-preview-close:hover {
+  background: var(--color-gray-100);
+}
+
+/* ---- Phone frame ----------------------------------------------------- */
+.edd-root .phone-frame {
+  width: 390px;
+  max-width: 100%;
+  min-height: 640px;
+  background: var(--color-white);
+  border-radius: 32px;
+  box-shadow: var(--shadow-phone);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+}
+.edd-root .phone-frame-scroll {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* ---- Screen content + header + progress ------------------------------ */
+.edd-root .screen-content {
+  flex: 1;
+  padding: 0 24px 24px;
+  display: flex;
+  flex-direction: column;
+}
+.edd-root .screen-content h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-heading);
+  line-height: 1.3;
+  margin-bottom: 8px;
+}
+.edd-root .screen-content h2 {
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--color-heading);
+  line-height: 1.3;
+  margin-bottom: 4px;
+}
+.edd-root .subtitle {
+  font-size: 14px;
+  color: var(--color-text);
+  line-height: 1.5;
+  margin-bottom: 20px;
+}
+.edd-root .progress-bar {
+  display: flex;
+  gap: 6px;
+  padding: 20px 24px 0;
+}
+.edd-root .progress-segment {
+  flex: 1;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-gray-200);
+  transition: background 0.3s ease;
+}
+.edd-root .progress-segment.active {
+  background: var(--color-primary);
+}
+.edd-root .header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+}
+.edd-root .back-button {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--color-heading);
+  font-size: 18px;
+}
+.edd-root .back-button:hover {
+  background: var(--color-gray-100);
+}
+.edd-root .lang-selector {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-heading);
+  cursor: pointer;
+}
+
+/* ---- Card + step icon ------------------------------------------------ */
+.edd-root .card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 24px;
+  box-shadow: var(--shadow-card);
+}
+.edd-root .step-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: var(--color-primary-soft);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 22px;
+  min-width: 48px;
+}
+
+/* ---- Collection buttons (full-width pill, app-edd style) ------------- */
+.edd-root .button-group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: auto;
+  padding-top: 24px;
+}
+.edd-root .button-group .btn {
+  width: 100%;
+  min-width: 0;
+}
+
+/* ---- Form fields ----------------------------------------------------- */
+.edd-root .form-input {
+  width: 100%;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-family: var(--font-family);
+  font-size: 15px;
+  color: var(--color-heading);
+  background: var(--color-white);
+  transition: border-color 0.2s;
+  outline: none;
+}
+.edd-root .form-input::placeholder {
+  color: var(--color-gray-400);
+}
+.edd-root .form-input:focus {
+  border-color: var(--color-primary);
+}
+.edd-root .form-input.error {
+  border-color: var(--color-error);
+}
+.edd-root .form-error {
+  font-size: 12px;
+  color: var(--color-error);
+  margin-top: 6px;
+}
+
+/* ---- Upload zone ----------------------------------------------------- */
+.edd-root .upload-zone {
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 32px 24px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.edd-root .upload-zone:hover {
+  border-color: var(--color-accent);
+  background: var(--color-accent-soft);
+}
+.edd-root .upload-zone.has-file {
+  border-style: solid;
+  border-color: var(--color-green);
+  background: #f0fdf4;
+}
+.edd-root .upload-zone .cloud-icon {
+  font-size: 32px;
+  color: var(--color-gray-400);
+  margin-bottom: 8px;
+}
+.edd-root .upload-zone .upload-text {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-heading);
+  margin-bottom: 4px;
+}
+.edd-root .upload-zone .upload-link {
+  color: var(--color-accent);
+  font-weight: 600;
+}
+.edd-root .upload-zone .upload-formats {
+  font-size: 12px;
+  color: var(--color-gray-400);
+  margin-top: 4px;
+}
+
+/* ---- Uploaded doc item ----------------------------------------------- */
+.edd-root .doc-uploaded-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: var(--color-gray-100);
+  border-radius: var(--radius-sm);
+  margin-bottom: 8px;
+}
+.edd-root .doc-uploaded-item .doc-thumb {
+  width: 40px;
+  height: 40px;
+  border-radius: 6px;
+  background: var(--color-gray-200);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+}
+.edd-root .doc-uploaded-item .doc-name {
+  flex: 1;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-heading);
+}
+.edd-root .doc-uploaded-item .doc-delete {
+  background: none;
+  border: none;
+  color: var(--color-error);
+  cursor: pointer;
+  font-size: 16px;
+  padding: 4px;
+}
+
+/* ---- Field blocks + yes/no in collection ----------------------------- */
+.edd-root .field-block {
+  margin-bottom: 24px;
+}
+.edd-root .field-block-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.edd-root .doc-category-name {
+  font-weight: 600;
+  color: var(--color-heading);
+  font-size: 15px;
+}
+.edd-root .field-done {
+  color: var(--color-green);
+  font-size: 14px;
+}
+.edd-root .yesno-group {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.edd-root .yesno-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 14px;
+  color: var(--color-heading);
+}
+.edd-root .yesno-option.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+.edd-root .yesno-radio {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  border: 2px solid var(--color-border);
+  flex-shrink: 0;
+}
+.edd-root .yesno-option.selected .yesno-radio {
+  border-color: var(--color-primary);
+  border-width: 5px;
+}
+
+/* ---- Review fields --------------------------------------------------- */
+.edd-root .review-fields {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.edd-root .review-field {
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.edd-root .review-field:last-child {
+  border-bottom: none;
+}
+.edd-root .review-field-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text);
+  margin-bottom: 4px;
+}
+.edd-root .review-field-value {
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-heading);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+/* ---- Loading dots ---------------------------------------------------- */
+.edd-root .loading-dots {
+  display: inline-flex;
+  gap: 4px;
+}
+.edd-root .loading-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: currentColor;
+  animation: edd-dot-pulse 1.2s infinite ease-in-out;
+}
+.edd-root .loading-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.edd-root .loading-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
+@keyframes edd-dot-pulse {
+  0%,
+  80%,
+  100% {
+    opacity: 0.3;
+    transform: scale(0.8);
+  }
+  40% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+/* ---- Terminal (confirmation) screen ---------------------------------- */
+.edd-root .terminal-screen {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 40px 24px;
+}
+.edd-root .terminal-icon {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 48px;
+  margin-bottom: 24px;
+}
+.edd-root .terminal-icon.success {
+  background: var(--color-success);
+  color: white;
+}
+.edd-root .terminal-heading {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-heading);
+  margin-bottom: 12px;
+}
+.edd-root .terminal-subtext {
+  font-size: 14px;
+  color: var(--color-text);
+  line-height: 1.5;
+  max-width: 280px;
+}
+
+/* ---- Powered footer -------------------------------------------------- */
+.edd-root .powered-footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 18px 24px;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-gray-400);
+}

@@ -1,0 +1,168 @@
+/* =========================================================================
+   Design tokens + theme system
+   -------------------------------------------------------------------------
+   Shared tokens (radii, shadows, gray scale, default font stacks) live on
+   :root. Color tokens + heading/body font stacks are themed via a
+   [data-theme] attribute on <html>. The default (no attribute) is the
+   "Verivend Strict" theme so existing screens render correctly before the
+   theme system activates.
+   ========================================================================= */
+
+:root {
+  /* ---- Shared shape tokens (do not vary by theme) ---------------------- */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 24px;
+  --radius-full: 9999px;
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-phone: 0 4px 24px rgba(0, 0, 0, 0.12);
+
+  /* ---- Font stacks referenced by themes -------------------------------- */
+  --font-stack-inter: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-stack-aptos: 'Aptos', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-stack-lora: 'Lora', 'Georgia', 'Times New Roman', serif;
+  --font-stack-system: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+
+  /* ---- Gray scale (shared across all themes) --------------------------- */
+  --color-gray-100: #F1F5F9;
+  --color-gray-200: #E2E8F0;
+  --color-gray-300: #CBD5E1;
+  --color-gray-400: #94A3B8;
+  --color-gray-500: #64748B;
+
+  /* ---- Status colors (shared across all themes) ------------------------ */
+  --color-error: #EF4444;
+  --color-failure: #EF4444;
+  --color-orange: #F59E0B;
+  --color-green: #22C55E;
+
+  /* =========================================================================
+     THEME: Verivend Strict (default)
+     ========================================================================= */
+  --color-primary: #0042E0;
+  --color-primary-hover: #0036B8;
+  --color-primary-soft: #EEF2FF;
+  --color-accent: #008cf0;
+  --color-accent-soft: #F0F8FF;
+  --color-text: #333D57;
+  --color-heading: #000d2d;
+  --color-success: #0042E0;
+  --color-success-soft: #F0FDF4;
+  --color-warning-soft: #FEF3C7;
+  --color-info-soft: #F0F4FF;
+  --color-success-bg: #DCFCE7;
+  --color-border: #E2E8F0;
+  --color-border-light: #F1F5F9;
+  --color-bg: #F8FAFC;
+  --color-white: #FFFFFF;
+  --color-role-badge: #0891B2;
+
+  --font-family: var(--font-stack-inter);
+  --font-heading: var(--font-stack-inter);
+}
+
+/* Explicit alias for dev-panel clarity — same as :root defaults. */
+:root[data-theme="verivend"] {
+  --color-primary: #0042E0;
+  --color-primary-hover: #0036B8;
+  --color-primary-soft: #EEF2FF;
+  --color-accent: #008cf0;
+  --color-accent-soft: #F0F8FF;
+  --color-text: #333D57;
+  --color-heading: #000d2d;
+  --color-success: #0042E0;
+  --color-info-soft: #F0F4FF;
+  --font-family: var(--font-stack-inter);
+  --font-heading: var(--font-stack-inter);
+}
+
+/* =========================================================================
+   THEME: Interro Green
+   ========================================================================= */
+:root[data-theme="interro-green"] {
+  --color-primary: #123524;
+  --color-primary-hover: #0c2418;
+  --color-primary-soft: #E6F0EA;
+  --color-accent: #339966;
+  --color-accent-soft: #EEF7F1;
+  --color-text: #18181B;
+  --color-heading: #123524;
+  --color-success: #339966;
+  --color-info-soft: #EEF7F1;
+  --font-family: var(--font-stack-aptos);
+  --font-heading: var(--font-stack-aptos);
+}
+
+/* =========================================================================
+   THEME: Interro Gold
+   ========================================================================= */
+:root[data-theme="interro-gold"] {
+  --color-primary: #FFC72C;
+  --color-primary-hover: #BB9220;
+  --color-primary-soft: #FFF6DC;
+  --color-accent: #BB9220;
+  --color-accent-soft: #FFF6DC;
+  --color-text: #123524;
+  --color-heading: #123524;
+  --color-success: #BB9220;
+  --color-info-soft: #FFF6DC;
+  --font-family: var(--font-stack-lora);
+  --font-heading: var(--font-stack-lora);
+}
+
+/* =========================================================================
+   THEME: Minimalist
+   ========================================================================= */
+/* =========================================================================
+   THEME: Interro Light Green
+   ========================================================================= */
+:root[data-theme="interro-light-green"] {
+  --color-primary: #339966;
+  --color-primary-hover: #2B8056;
+  --color-primary-soft: #E8F5EE;
+  --color-accent: #123524;
+  --color-accent-soft: #E6EDEA;
+  --color-text: #18181B;
+  --color-heading: #123524;
+  --color-success: #339966;
+  --color-info-soft: #E8F5EE;
+  --font-family: var(--font-stack-aptos);
+  --font-heading: var(--font-stack-aptos);
+}
+
+/* =========================================================================
+   THEME: Interro Dark Gold
+   ========================================================================= */
+:root[data-theme="interro-dark-gold"] {
+  --color-primary: #775D15;
+  --color-primary-hover: #614B10;
+  --color-primary-soft: #F5F0E2;
+  --color-accent: #BB9220;
+  --color-accent-soft: #FFF6DC;
+  --color-text: #18181B;
+  --color-heading: #775D15;
+  --color-success: #775D15;
+  --color-info-soft: #F5F0E2;
+  --font-family: var(--font-stack-lora);
+  --font-heading: var(--font-stack-lora);
+}
+
+/* =========================================================================
+   THEME: Minimalist
+   ========================================================================= */
+:root[data-theme="minimalist"] {
+  --color-primary: #18181B;
+  --color-primary-hover: #000000;
+  --color-primary-soft: #F4F4F5;
+  --color-accent: #52525B;
+  --color-accent-soft: #F4F4F5;
+  --color-text: #52525B;
+  --color-heading: #000000;
+  --color-success: #18181B;
+  --color-info-soft: #F4F4F5;
+  --color-border: #E4E4E7;
+  --color-border-light: #F4F4F5;
+  --font-family: var(--font-stack-system);
+  --font-heading: var(--font-stack-system);
+}

@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --interro-primary: #123524;
+  --interro-primary-hover: #0c2418;
+  --interro-primary-soft: #E6F0EA;
+  --interro-accent: #339966;
+  --interro-accent-soft: #EEF7F1;
+  --interro-text: #18181B;
+  --interro-heading: #123524;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-interro-primary: var(--interro-primary);
+  --color-interro-primary-hover: var(--interro-primary-hover);
+  --color-interro-primary-soft: var(--interro-primary-soft);
+  --color-interro-accent: var(--interro-accent);
+  --color-interro-accent-soft: var(--interro-accent-soft);
+  --color-interro-text: var(--interro-text);
+  --color-interro-heading: var(--interro-heading);
+}
+
+body {
+  font-family: "Aptos", "Segoe UI", -apple-system, BlinkMacSystemFont, "Helvetica Neue", Arial, sans-serif;
+}

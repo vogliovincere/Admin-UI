@@ -1,0 +1,50 @@
+We are going to edit this app. You will use the orchestrator agent to enact these changes. 
+
+1. Lets center this build around the Admin Portal View. Right now when the app is started up it gies me tow options for what i want to see: the admin portal or the client onboarding. What I want to do is this, lets start with the admin portal, but make it so that the Client onboarding can be clicked into from the top right. The top right button will be known as "Client View". The client view, instead of being just the onboarding form, will be similar to the view of the Interro Admin Portal. Except all the left hand nav icons will be grayed out similar to how somme of them are right now in the admin portal view. Actually in the Client view, lets get rid of the following left hand sav icons: Applications, organizations, fingerprints, rename "Platform Users to Users. Thats it
+
+2. In the client view, there will be another left hadn nav icon compared to the admin portal view. this additional one will be called Onboarding. That is where the onboarding flow will happen. In the root of this project I have included a .md file that shows you the pieces of information to collect in that monboarding flow. do not include the edd pieces of information in the onboarding flow when the application first goes through it. 
+
+3. In the Admin view, lets work on the applications tab. First, I want you to be informed of the EDD requirements in the document in the root folder which alsodescrbies the pieces of information to ask of the client when they first onboard. based on those edd requirements, i need a few more example clients that have onboarded as examples when thfirst logging in i should be able to dsee a few more entities under the EDD stage under the Applications tab. Have a few different permutations of the exact edd material needed. 
+
+
+4. I am giving you a interro logo in the project root, include that where you think is necessary. AND, Enact the new theme:
+● interro-green theme:
+
+  primary:        #123524  (dark forest green)
+  primary-hover:  #0c2418
+  primary-soft:   #E6F0EA
+  accent:         #339966  (mid green)
+  accent-soft:    #EEF7F1
+  text:           #18181B  (near black)
+  heading:        #123524
+  success:        #339966
+  info-soft:      #EEF7F1
+
+  font (body + heading): 'Aptos', 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif
+
+
+5. The purpose of this app is to foster a discussion based on requirements for onboarding I have written up. So we need to envision the workflow for onboarding from both the client's side and the Interro side. First, lets talk about the client side right quick. in the client view, the first thing they should see is the onboarding tab open, with the onboarding form youve made on the first page or part, depending on what you think looks best in regards to how to split the UI into different parts. On there, there should be a button clearly labeled and neon, not like the rest of the theme, which allows the user to prefill the information. Then they are able to submit. 
+
+Once the application is submitted, If I the user switch to the Admin view, I should be able to see the new application under the applications tab. I need it to show all the information similar to how applications tab looks like now, i mean when i click on that new application I should see the details, including the alloy results. 
+
+Once the Admin approves the application, if I the user switch back to the Client view, the applications tab should say I am approved, and prompt me in a sleek looking UI to Add a Bank Account. Clicking that will take me to a new tab, "Bank Accounts", which will allow me to add my bank account and give it a name it will be known as in the application. In this part of the workflow, there will be another clearly neon and unlike the rest of the theme button to prefull some bank account information to be added.
+
+Once the bank account is added by the client user, for the purposes of this demo, have it show as approved after a second. We should not tell the user why it is approved, just have the bank account, uneditable, shown as approved. Then have the ability to add another bank account. 
+
+
+6. Lets talk about the Admin view again. When the Client, or the user using this demo app acting as a "client", adds a bank account, the bank account details should be able to be seen in the Admin UI, applications detail screen for that client. It will be in a separate section titled "Bank Accounts" Under the Overview tab for that application detail view. The bank account will show the status of the bank account. The account and routing number will be asterisked out except for the last four digits. Within that same card should be a section indicating the tags and socre (out of 100) received from Socure Account Intelligence, which will be a third party vendor we use. The first bank account to be added should have a 97/100 score. The tags should be green, one should say "Name Matched", on should say "ACH Debit Available". the 97/100 should be green too. Everything should look sleek.
+
+7. Refresing the page should not lose all of the progress and entries that have been made in the demo so far. The only thing that should reset everything is a reset button, red, with a confirmation modal. 
+
+8. Lets talk about the EDD workflow. Look at how it works right now. When the admin adds an item under the EDD page in the detailed application view, the client view should have a small notification red icon, indicating the number of total outstanding EDD items, on the top right of the "Onboarding" left hand nav tab. Adding another EDD item for the client to complete should add to that toal notification number the client sees, albeit a small red icon.
+
+Edd can only be initiated after a client submits their onboarding. And the client can only add a bank account after their onboarding is complete. if the admin initiates EDD, then the onboarding is not complete. The client would see the specific items the admin asked for in edd as separate cards, or whatever you think would look best, in the onboarding tab. Each one should be able to be submitted as the client. Once each EDD answer is submitted, the admin user can see the client's submission under the the EDD tab, adjacent or under the specific EDD item the client answered
+
+9. Under the Application detail view, once a client is onboarded, the user should be able to see the applications balance in a sleek card on the right of the page. It should say $0. 
+
+10. Once the application is onboarded, the admin user needs the following abilities when viewing the account's application:
+Account Closure and Offboarding Requirements
+
+Ability to initiate closure of account. Closure can only occur if the balance in the account is 0
+
+Ability to attach a reason to the offboarding
