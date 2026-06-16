@@ -67,6 +67,16 @@ export default function BuildRequest({
   );
   const [note, setNote] = useState("");
 
+  // Generate link state.
+  const [linkGenerated, setLinkGenerated] = useState(false);
+  const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+
+  const handleGenerateLink = () => {
+    const token = localUid("lnk");
+    setGeneratedToken(token);
+    setLinkGenerated(true);
+  };
+
   // Custom Ask draft state.
   const [customOpen, setCustomOpen] = useState(false);
   const [customKind, setCustomKind] = useState<EddItemKind>("document");
@@ -156,7 +166,7 @@ export default function BuildRequest({
 
   const handleSend = () => {
     const id = localUid("edd");
-    const token = localUid("lnk");
+    const token = generatedToken ?? localUid("lnk");
     dispatch({
       type: "CREATE_REQUEST",
       payload: {
@@ -683,17 +693,43 @@ export default function BuildRequest({
             </dl>
           </div>
 
+          {linkGenerated && generatedToken && (
+            <div className="mb-4 mt-2">
+              <div className="text-[11px] font-semibold text-gray-500 uppercase tracking-wider mb-1.5">
+                Generated collection link
+              </div>
+              <input
+                readOnly
+                value={`https://interro.co/edd/${generatedToken}`}
+                className="w-full px-3.5 py-2.5 text-sm rounded-lg border border-interro-primary bg-interro-primary-soft text-interro-primary font-mono cursor-text focus:outline-none"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+            </div>
+          )}
+
           <div className="flex items-center gap-3 flex-wrap mt-2">
             <button
               onClick={() => setStep(1)}
-              className="inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium text-interro-primary bg-white border border-interro-primary rounded-lg hover:bg-interro-primary-soft"
+              disabled={linkGenerated}
+              className={`inline-flex items-center gap-1.5 px-5 py-2.5 text-sm font-medium rounded-lg border border-interro-primary ${
+                linkGenerated
+                  ? "opacity-40 cursor-not-allowed text-interro-primary bg-white"
+                  : "text-interro-primary bg-white hover:bg-interro-primary-soft"
+              }`}
             >
               <ArrowLeft className="w-4 h-4" /> Edit items
             </button>
             <button
+              onClick={handleGenerateLink}
+              disabled={!gpReady || linkGenerated}
+              className="px-5 py-2.5 text-sm font-medium border border-interro-primary text-interro-primary bg-white rounded-lg hover:bg-interro-primary-soft disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              Generate link
+            </button>
+            <button
               onClick={handleSend}
-              disabled={!gpReady}
-              className="px-5 py-2.5 text-sm font-medium text-white bg-interro-primary rounded-lg hover:bg-interro-primary-hover disabled:opacity-50"
+              disabled={!gpReady || !linkGenerated}
+              className="px-5 py-2.5 text-sm font-medium text-white bg-interro-primary rounded-lg hover:bg-interro-primary-hover disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send collection link
             </button>

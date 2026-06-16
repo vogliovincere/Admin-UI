@@ -472,6 +472,16 @@ input.
 - The system shall show a summary (subject, items requested count, recipient,
   delivery email(s)) before sending and generate the collection link/token on send.
 
+### B.2.4 Generate link — lock on items editing
+- The system shall provide a **"Generate link"** action on the Step 2 screen that
+  produces the secure collection link to be delivered to the recipient.
+- Once the link has been generated on this screen, the **"Edit items" control shall
+  become disabled and non-actionable** — the admin cannot change the requested items
+  after the deliverable link exists.
+- Sending the collection link delivers the already-generated link. No mechanism exists
+  on this screen to re-enable editing after generation; to change items the admin must
+  restart the EDD kickoff from Step 1.
+
 ## B.3 — End-user collection flow (kept in `app-edd` style)
 
 - The recipient flow shall follow: **intro → data drop / upload + fields → review →
@@ -480,6 +490,26 @@ input.
 - A **demo preview** ("see what the end user will see") shall be available for
   demonstration purposes; per B.0 this surface is **not part of the Admin Portal**.
 - Per B.2.2, the collection intro shall **not** show a "Note from firm" block.
+
+### B.3.1 Post-submission confirmation screen — "what happens next"
+- After the recipient submits their information, the system shall display a
+  **confirmation screen** whose content is **exactly and exclusively** the following —
+  no other copy, sections, or next-step instructions shall appear beyond the
+  confirmation heading:
+
+  1. The documents will be routed to the user's entity in **Alloy**.
+  2. An email will be sent to **Interro compliance personnel** containing the link to
+     the entity within Alloy.
+  3. EDD review will occur within Alloy.
+
+- These three bullet points are the **entire content** of the post-submission page
+  (aside from the confirmation heading itself). No other text, panels, or calls to
+  action shall be present on this screen.
+- The compliance person's note (B.2.2) is **never shown to the recipient** on this
+  screen or anywhere else in the collection UI — this remains consistent with the
+  existing rule.
+- The recipient collection UI otherwise retains its existing **interro.co visual
+  presentation** (`app-edd` style) throughout, including on this confirmation screen.
 
 ---
 
@@ -568,6 +598,11 @@ input.
   collection UI.
 - **AC3 (no note-from-firm).** *Given* the collection intro, *then* no "Note from
   firm" block renders.
+- **AC4 (generate link — edit locked).** *Given* the Step 2 screen, *when* the admin
+  activates "Generate link," *then* the secure collection link is produced **and** the
+  "Edit items" control becomes disabled and non-actionable immediately; the admin
+  cannot alter the requested item set after the link exists. *And* sending the
+  collection link delivers that already-generated link.
 
 ### Epic B-EDD-3 — End-user collection port (interro.co surface)
 - **AC1 (flow + style).** *Given* the collection flow, *then* it follows intro →
@@ -576,3 +611,10 @@ input.
   conceptually reachable via interro.co and is not exposed as an admin screen.
 - **AC3 (preview).** *Given* the demo, *then* a preview of the end-user experience is
   available for demonstration, separate from the admin portal.
+- **AC4 (post-submission confirmation content).** *Given* the recipient has submitted
+  their information, *then* the confirmation screen displays **exactly three bullet
+  points** as the "what happens next" content — (1) documents routed to the entity in
+  Alloy, (2) email sent to Interro compliance personnel with the Alloy entity link,
+  (3) EDD review occurs within Alloy — and **no other copy, sections, or next steps**
+  appear beyond the confirmation heading. The compliance person's note is never shown
+  to the recipient. The screen retains the interro.co (`app-edd`) visual style.

@@ -11,9 +11,12 @@
    The case is built via buildEddCaseFromApplication, which also supplies the
    list of filed parties (control persons / beneficial owners) that the Interro
    user chooses between on step 2.
+
+   RESTYLED: the chrome uses the Admin Console design language (Tailwind +
+   Interro green tokens) and is no longer wrapped in `.edd-root`. The ported
+   edd.css is applied only around the collection preview (inside RequestDetail).
    ========================================================================= */
 
-import "./edd.css";
 import { X } from "lucide-react";
 import EddConsole from "@/components/edd/EddConsole";
 import { useEdd } from "@/components/edd/edd-store";
@@ -40,59 +43,21 @@ export default function ApplicationEddDrawer({
 
   return (
     <div
-      className="edd-root"
-      style={{
-        position: "fixed",
-        inset: 0,
-        zIndex: 1000,
-        background: "var(--color-bg)",
-        overflowY: "auto",
-      }}
+      className="fixed inset-0 z-[1000] overflow-y-auto bg-gray-50"
       role="dialog"
       aria-modal="true"
     >
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 16,
-          padding: "12px 24px",
-          background: "var(--color-white)",
-          borderBottom: "1px solid var(--color-border)",
-          position: "sticky",
-          top: 0,
-          zIndex: 50,
-        }}
-      >
-        <div
-          style={{
-            fontWeight: 700,
-            color: "var(--color-heading)",
-            fontSize: 15,
-          }}
-        >
+      <div className="sticky top-0 z-50 flex items-center justify-between gap-4 border-b border-gray-200 bg-white px-6 py-3">
+        <div className="text-[15px] font-bold text-interro-heading">
           Interro · EDD Request · {caseObj.entityName}
         </div>
         <button
           type="button"
           onClick={onClose}
           aria-label="Close EDD drawer"
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 6,
-            fontSize: 13,
-            fontWeight: 600,
-            color: "var(--color-gray-500)",
-            background: "var(--color-white)",
-            border: "1px solid var(--color-border)",
-            borderRadius: "var(--radius-full)",
-            padding: "6px 12px",
-            cursor: "pointer",
-          }}
+          className="inline-flex items-center gap-1.5 rounded-full border border-gray-300 bg-white px-3 py-1.5 text-sm font-medium text-gray-600 hover:bg-gray-50"
         >
-          <X style={{ width: 16, height: 16 }} /> Close
+          <X className="h-4 w-4" /> Close
         </button>
       </div>
 

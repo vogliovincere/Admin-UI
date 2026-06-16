@@ -9,8 +9,16 @@
    opens the ported collection flow via OPEN_COLLECTION / SUBMIT_COLLECTION.
    On Run EDD / Escalate the component calls onOutcome so the detail page can
    write the result back to the VerificationProvider.
+
+   SCOPING: the admin console no longer renders inside `.edd-root` (the drawer
+   chrome was lifted out to clean Tailwind). The end-user collection preview,
+   however, intentionally keeps the original app-edd visuals, which depend on
+   the `.edd-root`-scoped edd.css. So RequestDetail imports edd.css and wraps
+   the CollectionPreview in its own full-screen `.edd-root` host, preserving the
+   prototype styling exactly.
    ========================================================================= */
 
+import "./edd.css";
 import { useState } from "react";
 import {
   ArrowLeft,
@@ -87,13 +95,17 @@ export default function RequestDetail({
   }
 
   if (previewOpen) {
-    // RequestDetail is already rendered inside the drawer's `.edd-root`, so the
-    // collection preview inherits the scoped app-edd styles directly.
+    // The admin console is no longer wrapped in `.edd-root`. The collection
+    // preview deliberately keeps the original app-edd visuals, so we provide a
+    // dedicated full-screen `.edd-root` host here (matching the bg/scroll the
+    // drawer used to supply) and let the scoped edd.css style the preview.
     return (
-      <CollectionPreview
-        requestId={r.id}
-        onClose={() => setPreviewOpen(false)}
-      />
+      <div className="edd-root fixed inset-0 z-[1100] overflow-y-auto bg-gray-50">
+        <CollectionPreview
+          requestId={r.id}
+          onClose={() => setPreviewOpen(false)}
+        />
+      </div>
     );
   }
 

@@ -30,9 +30,12 @@ export default function CollectionDone({ req, onClose }: CollectionDoneProps) {
           </>
         ) : (
           <>
-            Thank you. Your documents have been sent securely to Interro&rsquo;s
-            compliance team for review. You&rsquo;ll be notified once the review
-            is complete — no further action is needed right now.
+            Here&rsquo;s what happens next:
+            <ul style={{ textAlign: "left", lineHeight: 1.7, marginTop: 12, paddingLeft: 20 }}>
+              <li>The documents will be routed to your entity in Alloy.</li>
+              <li>An email will be sent to Interro compliance personnel containing the link to the entity within Alloy.</li>
+              <li>EDD review will occur within Alloy.</li>
+            </ul>
           </>
         )}
       </div>
