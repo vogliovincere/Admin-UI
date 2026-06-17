@@ -39,6 +39,8 @@ interface BuildRequestProps {
   variant?: "verification" | "application";
   // Application-flow recipient candidates (control persons + beneficial owners).
   applicationRecipients?: EddApplicationRecipient[];
+  // Fired on EDD collection-link lifecycle events (verification flow only).
+  onLinkEvent?: (kind: "generated" | "cancelled" | "regenerated") => void;
 }
 
 export default function BuildRequest({
@@ -47,6 +49,7 @@ export default function BuildRequest({
   onSent,
   variant = "verification",
   applicationRecipients = [],
+  onLinkEvent,
 }: BuildRequestProps) {
   const { dispatch } = useEdd();
 
@@ -70,11 +73,21 @@ export default function BuildRequest({
   // Generate link state.
   const [linkGenerated, setLinkGenerated] = useState(false);
   const [generatedToken, setGeneratedToken] = useState<string | null>(null);
+  // Tracks a prior cancellation so the next generation reports as a regen.
+  const [wasCancelled, setWasCancelled] = useState(false);
 
   const handleGenerateLink = () => {
     const token = localUid("lnk");
     setGeneratedToken(token);
     setLinkGenerated(true);
+    onLinkEvent?.(wasCancelled ? "regenerated" : "generated");
+  };
+
+  const handleCancelLink = () => {
+    setLinkGenerated(false);
+    setGeneratedToken(null);
+    setWasCancelled(true);
+    onLinkEvent?.("cancelled");
   };
 
   // Custom Ask draft state.
@@ -216,14 +229,14 @@ export default function BuildRequest({
             need collected, then continue.
           </p>
 
-          {/* Alloy decision banner — no risk score (B.1.1) */}
+          {/* KYC Status — current verification status fetched from the KYC
+              Microservice via API (not a stored decision). No risk score. */}
           <div className="flex items-center gap-3 px-4 py-3 mb-6 rounded-lg bg-amber-50 border border-amber-200">
             <span className="w-2.5 h-2.5 rounded-full bg-amber-500 flex-shrink-0" />
             <div className="text-sm text-amber-800">
               <strong className="text-amber-900">
-                Alloy decision: Manual Review
-              </strong>{" "}
-              · run {c.alloyReview.runDate}
+                KYC Status: Manual Review
+              </strong>
             </div>
           </div>
 
@@ -726,6 +739,14 @@ export default function BuildRequest({
             >
               Generate link
             </button>
+            {linkGenerated && (
+              <button
+                onClick={handleCancelLink}
+                className="px-5 py-2.5 text-sm font-medium border border-red-300 text-red-600 bg-white rounded-lg hover:bg-red-50"
+              >
+                Cancel link
+              </button>
+            )}
             <button
               onClick={handleSend}
               disabled={!gpReady || !linkGenerated}

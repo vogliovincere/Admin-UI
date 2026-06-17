@@ -19,6 +19,7 @@
 import { X } from "lucide-react";
 import EddConsole from "@/components/edd/EddConsole";
 import { useEdd } from "@/components/edd/edd-store";
+import { useVerifications } from "@/lib/verifications/verification-store";
 import type { EddCase, EddOutcome } from "@/types";
 
 interface EddDrawerProps {
@@ -38,6 +39,7 @@ export default function EddDrawer({
   onRecordOutcome,
 }: EddDrawerProps) {
   const { dispatch } = useEdd();
+  const { recordLinkEvent } = useVerifications();
 
   const handleOutcome = (requestId: string, outcome: EddOutcome) => {
     // Prototype behaviour: mark the request completed in the EDD store.
@@ -72,6 +74,9 @@ export default function EddDrawer({
         caseObj={caseObj}
         onClose={onClose}
         onOutcome={handleOutcome}
+        onLinkEvent={(kind) =>
+          recordLinkEvent(caseObj.sessionId, caseObj.personId ?? null, kind)
+        }
       />
     </div>
   );

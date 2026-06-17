@@ -26,6 +26,8 @@ interface EddConsoleProps {
   // Recipient-flow variant (defaults to the verifications GP/LP flow).
   variant?: "verification" | "application";
   applicationRecipients?: EddApplicationRecipient[];
+  // Fired on EDD collection-link lifecycle events (verification flow only).
+  onLinkEvent?: (kind: "generated" | "cancelled" | "regenerated") => void;
 }
 
 export default function EddConsole({
@@ -35,6 +37,7 @@ export default function EddConsole({
   onOutcome,
   variant = "verification",
   applicationRecipients = [],
+  onLinkEvent,
 }: EddConsoleProps) {
   const [screen, setScreen] = useState<Screen>(
     startRequestId ? "detail" : "build"
@@ -56,6 +59,7 @@ export default function EddConsole({
       caseObj={caseObj}
       variant={variant}
       applicationRecipients={applicationRecipients}
+      onLinkEvent={onLinkEvent}
       onCancel={onClose}
       onSent={(id) => {
         setRequestId(id);

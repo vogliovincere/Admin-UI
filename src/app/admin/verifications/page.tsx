@@ -23,7 +23,7 @@ import {
   downloadCsv,
   perPersonRowCount,
 } from "@/lib/verifications/export-csv";
-import { PathType, SessionStatus } from "@/types";
+import { PathType, SessionStatus, VerificationSession } from "@/types";
 
 const pathLabels: Record<PathType, string> = {
   solo: "Solo",
@@ -54,6 +54,19 @@ type SortKey =
   | "submittedAt";
 
 const PAGE_SIZE = 6;
+
+// Returns the person whose name should appear in the "Primary Applicant" column.
+// For entity sessions: prefer control_person, then ubo, then fall back to persons[0].
+// For all other path types: always persons[0].
+function primaryApplicantPerson(s: VerificationSession) {
+  if (s.pathType === "entity") {
+    const cp = s.persons.find((p) => p.role === "control_person");
+    if (cp) return cp;
+    const ubo = s.persons.find((p) => p.role === "ubo");
+    if (ubo) return ubo;
+  }
+  return s.persons[0];
+}
 
 function fmtDate(iso?: string): string {
   if (!iso) return "—";
@@ -198,12 +211,15 @@ export default function VerificationsPage() {
     return verificationSessions.filter((s) => {
       const primary = s.persons[0];
       const primaryName = `${primary.firstName} ${primary.lastName}`.toLowerCase();
-      // Free-text search matches primary applicant, Organization Environment,
-      // and the Entity Being Verified value (A.2.3).
+      // Free-text search matches any person name (incl. UBO / Control Person),
+      // Organization Environment, and the Legal Entity Being Verified value (A.2.3).
       const entityBeingVerified = entityNameFor(s).toLowerCase();
+      const anyPersonMatch = s.persons.some((p) =>
+        `${p.firstName} ${p.lastName}`.toLowerCase().includes(term)
+      );
       const matchesSearch =
         !term ||
-        primaryName.includes(term) ||
+        anyPersonMatch ||
         s.organizationName.toLowerCase().includes(term) ||
         entityBeingVerified.includes(term);
       const matchesPrimary = !primaryTerm || primaryName.includes(primaryTerm);
@@ -244,10 +260,13 @@ export default function VerificationsPage() {
           av = a.pathType;
           bv = b.pathType;
           break;
-        case "primaryApplicant":
-          av = `${a.persons[0].firstName} ${a.persons[0].lastName}`;
-          bv = `${b.persons[0].firstName} ${b.persons[0].lastName}`;
+        case "primaryApplicant": {
+          const pa = primaryApplicantPerson(a);
+          const pb = primaryApplicantPerson(b);
+          av = `${pa.firstName} ${pa.lastName}`;
+          bv = `${pb.firstName} ${pb.lastName}`;
           break;
+        }
         case "status":
           av = a.status;
           bv = b.status;
@@ -402,7 +421,7 @@ export default function VerificationsPage() {
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
           <input
             type="text"
-            placeholder="Search entity, applicant, or organization..."
+            placeholder="Search legal entity, applicant, or organization..."
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -500,7 +519,7 @@ export default function VerificationsPage() {
         <table className="w-full">
           <thead>
             <tr className="border-b border-gray-200">
-              <SortHeader label="Entity Being Verified" sortKey="entityBeingVerified" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
+              <SortHeader label="Legal Entity Being Verified" sortKey="entityBeingVerified" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
               <SortHeader label="Path Type" sortKey="pathType" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
               <SortHeader label="Organization Environment" sortKey="organizationName" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
               <SortHeader label="Primary Applicant" sortKey="primaryApplicant" activeKey={sortKey} dir={sortDir} onSort={handleSort} />
@@ -515,7 +534,7 @@ export default function VerificationsPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {paged.map((s) => {
-              const primary = s.persons[0];
+              const primary = primaryApplicantPerson(s);
               return (
                 <tr
                   key={s.id}
@@ -524,7 +543,7 @@ export default function VerificationsPage() {
                     window.location.href = `/admin/verifications/${s.id}`;
                   }}
                 >
-                  {/* Entity Being Verified (A.2.1): solo → applicant name,
+                  {/* Legal Entity Being Verified (A.2.1): solo → applicant name,
                       joint → trust/account name, entity → legal name. */}
                   <td className="px-4 py-3">
                     <Link

@@ -88,7 +88,7 @@ filterable, sortable, paginated table. Default sort: most recently created first
 ### A.2.1 Column layout (left → right)
 The system shall present the index columns in this exact order:
 
-1. **Entity Being Verified** *(leftmost)* — the name of the subject being verified:
+1. **Legal Entity Being Verified** *(leftmost)* — the name of the subject being verified:
    - **Solo:** the individual applicant's full name (e.g. "Aisha Rahman").
    - **Joint:** the **comma-separated combination of the names of the persons being
      verified** (e.g. "Aisha Rahman, David Rahman"). This cell shall **not** be blank
@@ -100,7 +100,11 @@ The system shall present the index columns in this exact order:
 2. **Path Type** — Solo / Joint / Entity.
 3. **Organization Environment** *(renamed from "Organization")* — see definition in
    A.2.2.
-4. **Primary Applicant** — primary applicant's full name.
+4. **Primary Applicant** — display logic varies by session type:
+   - **Solo / Joint:** the primary applicant's full name (existing behavior: `persons[0]`).
+   - **Entity:** the **Control Person's full name**, if one exists; if there is no
+     Control Person, fall back to the **first UBO attached to the business**. If
+     neither exists, the cell may be blank. *(See A2.3 requirements ticket A3.)*
 5. **Status** — session status (see A.4 status model).
 6. **Persons** — person count.
 7. **Verified** — persons verified, "X of N".
@@ -113,9 +117,9 @@ The system shall present the index columns in this exact order:
 - **Definition:** the organization (tenant) that **sent** the KYC/KYB workflow to
   the entity being verified — i.e. the GP / tenant **environment within Delio** from
   which the verification was initiated.
-- For a Solo session, the Entity Being Verified column shows the applicant's name
-  while the Organization Environment column shows the **sending org** (these are
-  distinct values).
+- For a Solo session, the Legal Entity Being Verified column shows the applicant's
+  name while the Organization Environment column shows the **sending org** (these
+  are distinct values).
 
 ### A.2.3 Filters
 The system shall provide:
@@ -125,9 +129,15 @@ The system shall provide:
 - **Date created** — specific-date filter.
 - **Date submitted** — specific-date filter.
 - **Primary applicant name** — free text.
-- **Free-text search** across primary applicant name and Organization Environment
-  name. (Search shall also match the Entity Being Verified value, including the
-  combined Joint names.)
+- **Free-text search** — the search box shall match across **all** of the following:
+  - Primary applicant name.
+  - Organization Environment name.
+  - Legal Entity Being Verified value (including combined Joint names).
+  - **All associated persons' names** attached to the session: co-holders (Joint),
+    UBOs, and Control Persons (Entity). A search term that matches any UBO or
+    Control Person's name shall surface that session in results.
+  > This means a compliance user can find an entity session by typing any associated
+  > person's name, not only the primary applicant or legal entity name.
 
 ### A.2.4 Sorting & pagination
 - The system shall allow sorting by the sortable columns and shall paginate the
@@ -141,7 +151,7 @@ The system shall provide:
 > (removed progress / new fields), and A4 (retained affordances).
 
 ### A.3.1 Header
-- The system shall show, as the detail header title, the **Entity Being Verified**:
+- The system shall show, as the detail header title, the **Legal Entity Being Verified**:
   - **Solo:** the applicant's name (e.g. "Aisha Rahman") — **not** the organization
     name.
   - **Joint:** the joint account / trust name (the combined person names appear in
@@ -173,7 +183,29 @@ The system shall provide:
 - The system shall display the KYC status from Alloy, with payload tags shown only
   for the qualifying statuses (global rule).
 
-### A.3.4 Additional persons (Joint and Entity only)
+### A.3.4 Overview tab — Entity Information (Entity sessions only)
+
+> **Ticket A4.** The separate "Entity Info" tab is **removed** for Entity sessions.
+> Its content — entity information fields — is now surfaced directly within the
+> **Overview tab** for Entity sessions.
+
+- For **Entity sessions**, the Overview tab shall display the following **Entity
+  Information** section (in addition to the session summary/header already there):
+  - Legal name
+  - DBA (if present)
+  - Tax ID (masked) and issuing country
+  - File / registration number
+  - Country of registration
+  - State of registration (if US entity)
+  - Principal address
+- The **standalone "Entity Info" tab shall not exist** for Entity sessions.
+- **Solo and Joint** Overview tab behavior is unchanged; no Entity Information
+  section appears for those session types.
+
+### A.3.5 Additional persons (Joint and Entity only)
+
+> **Ticket A5.** Link-management actions are gated on submission state.
+
 - **Joint:** co-holders with name, email, DOB, address, verification status badge,
   and verification-link status (sent / opened / completed / expired / revoked).
 - **Entity:** associated parties with name, email, role (UBO / Control Person), DOB,
@@ -182,13 +214,30 @@ The system shall provide:
 - SSN / Tax ID shall be shown only once the person has begun verification (data
   entered); otherwise blank.
 - Control persons shall be labeled simply "Control Person."
+- **Link-management actions (Generate link / Send / Resend) — submission gate.**
+  Once a person has **submitted** their information, the **"Generate link"** and
+  **"Send / Resend link"** actions for that person shall be **hidden or disabled**
+  and shall not be available. A person is considered submitted when any of the
+  following is true:
+  - Their standalone verification link is marked **completed**; or
+  - Their per-person badge is **Under Review**, **Approved**, or **Denied**
+    (any post-submission state).
+  
+  For persons who have not yet submitted (badges: Not Started, Link Sent, In
+  Progress, Expired), link-management actions remain available as before.
 
-### A.3.5 Entity information (Entity flow only)
+### A.3.6 Entity information (Entity flow only) — MOVED
+
+> The entity information fields formerly described in this section have been
+> **moved to the Overview tab** (see A.3.4 above). This section is retained as a
+> cross-reference to avoid ambiguity.
+
 - The system shall show legal name, DBA (if present), tax ID (masked) and issuing
   country, file/registration number, country of registration, state of registration
-  (if US), and principal address.
+  (if US), and principal address — **displayed within the Overview tab for Entity
+  sessions** (A.3.4), not in a separate "Entity Info" tab.
 
-### A.3.6 Retained per-person & session affordances
+### A.3.7 Retained per-person & session affordances
 - The system shall retain the per-person **"Initiate EDD"** affordance (and the
   session-level "Initiate EDD" for Solo). This button **initiates the Section B EDD
   Workflow** and is part of the Admin Console build.
@@ -331,6 +380,9 @@ Manual Review.
 ### A.5.2 Verification-link management
 - View / resend / regenerate / revoke an additional person's standalone link.
 - All link actions are recorded in the session timeline.
+- **Submission gate:** the Generate link, Send, and Resend actions are unavailable
+  (hidden or disabled) once a person has submitted. See A.3.5 for the full
+  definition of "submitted" and per-badge conditions.
 
 ### A.5.3 Aggregate progress indicator
 - The system shall show an aggregate "X of N persons verified" summary for
@@ -359,6 +411,22 @@ Manual Review.
   admin navigation. The affordance may remain visible but shall not be
   clickable/navigable. The underlying work is preserved separately — see
   `requirements-notifications.md`.
+
+---
+
+## A.8 — Global RBAC: Verifications tab access
+
+> **Ticket G1.**
+
+- The system shall require the **"Compliance" RBAC role** for a user to even
+  **view the Verifications tab** in the admin navigation.
+- Users without the Compliance role shall not see or be able to navigate to the
+  Verifications tab. The tab shall not be rendered or accessible to non-Compliance
+  roles.
+- **Implementation note:** enforcing this RBAC gate is a **separate ticket** and has
+  **no demo impact** in the current build. The current demo may render the
+  Verifications tab without RBAC enforcement; this requirement documents the
+  intended production behavior for a future ticket.
 
 ---
 ---
@@ -398,7 +466,25 @@ Manual Review.
 - The system shall **remove all mention of a risk score** (including the "Risk score
   N" text in the Alloy decision banner and anywhere else on the page).
 
-### B.1.2 "Alloy tags" card (renamed)
+### B.1.2 "KYC Status" banner (replaces "Alloy decision" banner)
+
+> **Ticket B1.** Renames and respecifies the decision banner shown to the compliance
+> person on the "Build the EDD request" (Step 1) screen.
+
+- The system shall **relabel** the banner currently titled "Alloy decision" to
+  **"KYC Status."**
+- The system shall **remove the timestamp / run date** (the "· run \<date\>" text)
+  from this banner. No timestamp or point-in-time run indicator shall appear on the
+  banner.
+- The **KYC Status value** shown in this banner is the **current status of the
+  verification in the KYC Microservice**, retrieved live from the KYC Microservice
+  API at the time the compliance person opens the EDD kickoff step — it is **not** a
+  stored point-in-time decision from a previous run.
+- In the demo (no live backend), the KYC Status value shall be mocked in-memory to
+  simulate a live retrieval; the requirement records that in production it comes from
+  a KYC Microservice API call.
+
+### B.1.3 "Alloy tags" card (renamed)
 - The system shall rename the card directly **above** the "request these items" area
   to **"Alloy tags."**
 - The card shall display **match / no-match** tags for identity attributes; each
@@ -414,7 +500,7 @@ Manual Review.
 - The system shall **not** display any explanatory description for the tags (no
   descriptive text under the tags).
 
-### B.1.3 Requestable item catalog
+### B.1.4 Requestable item catalog
 The system shall offer the following catalog of requestable items (grouped by
 category), each selectable for the request. `kind: document` renders an
 upload/data-drop in collection; `kind: field` renders a text/textarea/select/yes-no
@@ -443,7 +529,7 @@ input.
 - **Expected activity & volume** — *field (textarea)*
 - **Politically Exposed Person (PEP) declaration** — *field (yes/no)*
 
-### B.1.4 Custom Ask
+### B.1.5 Custom Ask
 - The system shall let the admin add a **Custom Ask** requested item.
 - For a Custom Ask the admin shall choose the type: **file upload** or **text
   field**.
@@ -472,15 +558,44 @@ input.
 - The system shall show a summary (subject, items requested count, recipient,
   delivery email(s)) before sending and generate the collection link/token on send.
 
-### B.2.4 Generate link — lock on items editing
+### B.2.4 Generate link — lock on items editing, timeline entry, and cancel/regenerate
+
+> **Ticket B2 (generate → timeline) and Ticket B3 (cancel/regenerate).**
+
+**Generate link — edit lock (existing requirement, unchanged)**
 - The system shall provide a **"Generate link"** action on the Step 2 screen that
   produces the secure collection link to be delivered to the recipient.
 - Once the link has been generated on this screen, the **"Edit items" control shall
   become disabled and non-actionable** — the admin cannot change the requested items
   after the deliverable link exists.
-- Sending the collection link delivers the already-generated link. No mechanism exists
-  on this screen to re-enable editing after generation; to change items the admin must
-  restart the EDD kickoff from Step 1.
+- Sending the collection link delivers the already-generated link.
+
+**Generate link — timeline entry (Ticket B2)**
+- When the compliance person activates **"Generate link,"** the system shall append
+  a timestamped timeline entry **"Link generated by [admin user]"** to the
+  verification timeline.
+- **Placement rule:**
+  - **Solo / Joint sessions:** the entry is appended to the **individual person's
+    timeline**.
+  - **Entity sessions:** the entry is appended to **both** the entity (business /
+    KYB) timeline **and** the individual person's timeline.
+
+**Cancel link and regenerate (Ticket B3)**
+- The system shall provide a **"Cancel link"** action that cancels the currently
+  generated collection link.
+- Cancelling the link shall **re-enable editing of the requested items** (the "Edit
+  items" control becomes active again).
+- After cancellation, the compliance person may activate **"Generate link"** again
+  to produce a new collection link with a potentially different item set.
+- **Timeline entries for cancel and regenerate:**
+  - When the link is **cancelled**, the system shall append a timestamped entry
+    **"Link cancelled by [admin user]"** to the verification timeline.
+  - When a **new link is subsequently generated**, the system shall append a
+    timestamped entry **"New link generated by [admin user]"** to the verification
+    timeline.
+  - Both entries follow the **same entity/individual placement rule** as the initial
+    "Link generated" entry (i.e. for Entity sessions, both entity and individual
+    timelines receive the entry; for Solo/Joint, the individual's timeline only).
 
 ## B.3 — End-user collection flow (kept in `app-edd` style)
 
@@ -520,22 +635,30 @@ input.
 
 ### Epic A-VER-1 — Verifications index (columns, rename, search)
 - **AC1 (column order).** *Given* the index, *when* it renders, *then* columns are,
-  left→right: Entity Being Verified, Path Type, Organization Environment, Primary
-  Applicant, Status, Persons, Verified, Created, Submitted.
-- **AC2 (entity-being-verified value).** *Given* a Solo row, *then* col 1 shows the
-  applicant's full name; *given* a **Joint** row, *then* col 1 shows the
+  left→right: Legal Entity Being Verified, Path Type, Organization Environment,
+  Primary Applicant, Status, Persons, Verified, Created, Submitted.
+- **AC2 (legal-entity-being-verified value).** *Given* a Solo row, *then* col 1
+  shows the applicant's full name; *given* a **Joint** row, *then* col 1 shows the
   **comma-separated names of the persons being verified** (never blank); *given*
-  Entity, the entity legal name. No standalone "Entity Name" column remains.
-- **AC3 (rename).** *Given* the index, *then* the "Organization" column header reads
-  "Organization Environment" and shows the sending tenant.
-- **AC4 (search).** *Given* the search box, *when* the user types, *then* it matches
-  primary applicant, Organization Environment, and Entity Being Verified (including
-  combined Joint names).
+  Entity, the entity legal name. No standalone "Entity Name" column remains. The
+  column header reads **"Legal Entity Being Verified"** (ticket A1).
+- **AC3 (rename org column).** *Given* the index, *then* the "Organization" column
+  header reads "Organization Environment" and shows the sending tenant.
+- **AC4 (search — broad scope).** *Given* the search box, *when* the user types,
+  *then* results match against: primary applicant name; Organization Environment
+  name; Legal Entity Being Verified value (including combined Joint names); **and
+  all associated persons' names** (co-holders, UBOs, Control Persons) attached to
+  each session (ticket A2).
+- **AC5 (primary applicant — entity fallback).** *Given* an Entity session row,
+  *then* the Primary Applicant column shows the **Control Person's full name** if
+  one exists; if no Control Person exists, it shows the **first UBO's full name**;
+  if neither exists the cell may be blank. *Given* Solo/Joint rows, *then* existing
+  behavior (`persons[0]`) is unchanged (ticket A3).
 
 ### Epic A-VER-2 — Verifications detail (header, fields, removed progress, affordances)
 - **AC1 (solo header).** *Given* a Solo session detail, *then* the header title is
-  the applicant's name (not the org); Organization Environment appears as a labeled
-  field.
+  the applicant's name (not the org); header reads "Legal Entity Being Verified" as
+  the labeled concept; Organization Environment appears as a labeled field.
 - **AC2 (application field).** *Given* any session detail, *then* an "Application"
   field reads "Delio".
 - **AC3 (progress removed).** *Given* the detail view, *then* no "Verification
@@ -549,6 +672,20 @@ input.
   appears** (session or per-person).
 - **AC6 (initiate EDD entry).** *Given* "Initiate EDD", *when* clicked, *then* it
   launches the EDD workflow entry point (may be stubbed before Section B is built).
+- **AC7 (entity overview absorbs entity info — ticket A4).** *Given* an Entity
+  session, *when* the user opens the **Overview tab**, *then* the following Entity
+  Information fields are displayed within Overview: legal name, DBA (if present),
+  tax ID + issuing country, file/registration number, country of registration, state
+  of registration (if US), principal address. *And* there is **no separate "Entity
+  Info" tab** in the navigation for Entity sessions.
+- **AC8 (solo/joint overview unchanged).** *Given* a Solo or Joint session, *then*
+  the Overview tab does not gain an Entity Information section and behaves as before.
+- **AC9 (link actions hidden for submitted persons — ticket A5).** *Given* a person
+  whose badge is Under Review, Approved, or Denied, **or** whose link is completed,
+  *then* the "Generate link," "Send link," and "Resend link" actions for that person
+  are **not available** (hidden or disabled). *Given* a person whose badge is Not
+  Started, Link Sent, In Progress, or Expired, *then* link-management actions remain
+  available.
 
 ### Epic A-VER-3 — Status & timeline model
 - **AC1 (no error status).** *Given* any person, *then* the "error"/"Verification
@@ -572,6 +709,16 @@ input.
 - **AC1 (grayed out).** *Given* the admin navigation, *then* the "Notifications" tab
   is grayed out / inaccessible (not navigable). See `requirements-notifications.md`.
 
+### Epic A-VER-5 — Global RBAC: Verifications tab access (ticket G1)
+- **AC1 (compliance role required).** *Given* a user without the "Compliance" RBAC
+  role, *then* the Verifications tab is **not visible and not navigable** for that
+  user.
+- **AC2 (compliance role grants access).** *Given* a user with the "Compliance" RBAC
+  role, *then* the Verifications tab is visible and accessible.
+- **AC3 (demo / separate ticket note).** This RBAC gate is a **separate ticket** and
+  has **no demo impact** in the current build. The current demo build is not required
+  to enforce this gate; the AC is recorded here for the production implementation.
+
 ### Epic B-EDD-1 — EDD console restyle + kickoff (Step 1)
 - **AC1 (restyle).** *Given* the admin EDD pages, *then* they match the Admin
   Console (Tailwind/Interro) look.
@@ -579,14 +726,19 @@ input.
   badges appear.
 - **AC3 (no risk score).** *Given* step 1, *then* no risk score appears (banner or
   elsewhere).
-- **AC4 (alloy tags card).** *Given* step 1, *then* the card above "request these
+- **AC4 (KYC Status banner — ticket B1).** *Given* step 1, *then* the decision
+  banner is labeled **"KYC Status"** (not "Alloy decision"), contains **no
+  timestamp or run-date text**, and displays the **current verification status as
+  retrieved from the KYC Microservice** (mocked in-memory for the demo). No stored
+  point-in-time decision value is used.
+- **AC5 (alloy tags card).** *Given* step 1, *then* the card above "request these
   items" is titled "Alloy tags" and shows 4 attribute tags (individuals: Name, DOB,
   Address, SSN; entities: Legal Name, Formation/Incorporation Date, Registered
   Address, Tax ID), each Match (green) / No match (red), with no descriptions, and
   following the global tag rule.
-- **AC5 (catalog present).** *Given* step 1, *then* all catalog items in B.1.3 are
+- **AC6 (catalog present).** *Given* step 1, *then* all catalog items in B.1.4 are
   selectable, grouped by category.
-- **AC6 (custom ask).** *Given* step 1, *when* the admin adds a Custom Ask choosing
+- **AC7 (custom ask).** *Given* step 1, *when* the admin adds a Custom Ask choosing
   file-upload or text-field and entering a name and subtitle, *then* the custom item
   appears among requested items and is sent like any item.
 
@@ -603,6 +755,19 @@ input.
   "Edit items" control becomes disabled and non-actionable immediately; the admin
   cannot alter the requested item set after the link exists. *And* sending the
   collection link delivers that already-generated link.
+- **AC5 (generate link — timeline entry, ticket B2).** *Given* "Generate link" is
+  activated, *then* a **"Link generated by [admin user]"** timestamped entry is
+  appended to: the individual person's timeline (Solo/Joint); **and** both the entity
+  (KYB) timeline and the individual person's timeline (Entity sessions).
+- **AC6 (cancel link re-enables editing, ticket B3).** *Given* a link has been
+  generated, *when* the compliance person activates "Cancel link," *then* the
+  collection link is cancelled **and** the "Edit items" control becomes active again.
+- **AC7 (cancel — timeline entry, ticket B3).** *Given* "Cancel link" is activated,
+  *then* a **"Link cancelled by [admin user]"** timestamped entry is appended to the
+  verification timeline, following the same entity/individual placement rule as AC5.
+- **AC8 (regenerate — timeline entry, ticket B3).** *Given* a new link is generated
+  after a cancellation, *then* a **"New link generated by [admin user]"** timestamped
+  entry is appended to the verification timeline, following the same placement rule.
 
 ### Epic B-EDD-3 — End-user collection port (interro.co surface)
 - **AC1 (flow + style).** *Given* the collection flow, *then* it follows intro →

@@ -251,6 +251,12 @@ function LinkManager({
   // Needs a fresh link when expired or revoked (or never sent).
   const needsNew =
     status === "expired" || status === "revoked" || status === "not_sent";
+  // Person has already submitted — hide generate/send/revoke actions.
+  const submitted =
+    status === "completed" ||
+    (["under_review", "approved", "denied"] as const).includes(
+      person.badge as "under_review" | "approved" | "denied"
+    );
 
   function copyLink() {
     if (!link?.url) return;
@@ -318,30 +324,38 @@ function LinkManager({
             <Link2 className="w-3.5 h-3.5" /> {showLink ? "Hide link" : "View link"}
           </button>
         )}
-        <button
-          type="button"
-          onClick={() => resendLink(session.id, person.id)}
-          className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
-        >
-          <Mail className="w-3.5 h-3.5" /> Resend via email
-        </button>
-        {needsNew && (
-          <button
-            type="button"
-            onClick={() => regenerateLink(session.id, person.id)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium text-interro-primary bg-interro-primary-soft rounded-lg hover:bg-interro-accent-soft"
-          >
-            <RefreshCw className="w-3.5 h-3.5" /> Generate new link
-          </button>
-        )}
-        {isActive && (
-          <button
-            type="button"
-            onClick={() => revokeLink(session.id, person.id)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100"
-          >
-            <Ban className="w-3.5 h-3.5" /> Revoke
-          </button>
+        {submitted ? (
+          <span className="text-[11px] text-gray-500">
+            Submitted — link actions unavailable
+          </span>
+        ) : (
+          <>
+            <button
+              type="button"
+              onClick={() => resendLink(session.id, person.id)}
+              className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+            >
+              <Mail className="w-3.5 h-3.5" /> Resend via email
+            </button>
+            {needsNew && (
+              <button
+                type="button"
+                onClick={() => regenerateLink(session.id, person.id)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium text-interro-primary bg-interro-primary-soft rounded-lg hover:bg-interro-accent-soft"
+              >
+                <RefreshCw className="w-3.5 h-3.5" /> Generate new link
+              </button>
+            )}
+            {isActive && (
+              <button
+                type="button"
+                onClick={() => revokeLink(session.id, person.id)}
+                className="inline-flex items-center gap-1.5 px-2.5 py-1 font-medium text-red-700 bg-red-50 rounded-lg hover:bg-red-100"
+              >
+                <Ban className="w-3.5 h-3.5" /> Revoke
+              </button>
+            )}
+          </>
         )}
       </div>
     </div>
@@ -573,9 +587,6 @@ export default function VerificationDetailClient() {
     ...(isMultiPerson
       ? [{ key: "persons" as Tab, label: "Persons", icon: <Users className="w-4 h-4" /> }]
       : []),
-    ...(isEntity
-      ? [{ key: "entity" as Tab, label: "Entity Info", icon: <Landmark className="w-4 h-4" /> }]
-      : []),
     { key: "timeline", label: "Timeline", icon: <Clock className="w-4 h-4" /> },
   ];
 
@@ -687,7 +698,43 @@ export default function VerificationDetailClient() {
 
       <div className="space-y-6">
         {activeTab === "overview" && (
-          <PrimaryApplicantSection person={primary} />
+          isEntity && session.entity ? (
+            <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+                <Landmark className="w-5 h-5 text-gray-400" /> Entity Information
+              </h2>
+              <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                {[
+                  ["Legal Name", session.entity.legalName],
+                  ["DBA", session.entity.dba || "—"],
+                  [
+                    "Tax ID",
+                    `${maskValue(session.entity.taxId)} (${session.entity.taxIdIssuingCountry})`,
+                  ],
+                  ["File / Registration Number", session.entity.fileNumber || "—"],
+                  ["Country of Registration", session.entity.countryOfRegistration],
+                  ["State of Registration", session.entity.stateOfRegistration || "—"],
+                ].map(([label, value]) => (
+                  <div key={label}>
+                    <dt className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                      {label}
+                    </dt>
+                    <dd className="text-sm text-gray-900 mt-1">{value}</dd>
+                  </div>
+                ))}
+                <div className="md:col-span-2">
+                  <dt className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
+                    Principal Address
+                  </dt>
+                  <dd className="text-sm text-gray-900 mt-1">
+                    {fullAddress(session.entity.principalAddress)}
+                  </dd>
+                </div>
+              </dl>
+            </div>
+          ) : (
+            <PrimaryApplicantSection person={primary} />
+          )
         )}
 
         {activeTab === "persons" && isMultiPerson && (
@@ -716,42 +763,6 @@ export default function VerificationDetailClient() {
                 )}
               </div>
             </div>
-          </div>
-        )}
-
-        {activeTab === "entity" && isEntity && session.entity && (
-          <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-            <h2 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Landmark className="w-5 h-5 text-gray-400" /> Entity Information
-            </h2>
-            <dl className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-              {[
-                ["Legal Name", session.entity.legalName],
-                ["DBA", session.entity.dba || "—"],
-                [
-                  "Tax ID",
-                  `${maskValue(session.entity.taxId)} (${session.entity.taxIdIssuingCountry})`,
-                ],
-                ["File / Registration Number", session.entity.fileNumber || "—"],
-                ["Country of Registration", session.entity.countryOfRegistration],
-                ["State of Registration", session.entity.stateOfRegistration || "—"],
-              ].map(([label, value]) => (
-                <div key={label}>
-                  <dt className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
-                    {label}
-                  </dt>
-                  <dd className="text-sm text-gray-900 mt-1">{value}</dd>
-                </div>
-              ))}
-              <div className="md:col-span-2">
-                <dt className="text-[11px] font-medium text-gray-500 uppercase tracking-wider">
-                  Principal Address
-                </dt>
-                <dd className="text-sm text-gray-900 mt-1">
-                  {fullAddress(session.entity.principalAddress)}
-                </dd>
-              </div>
-            </dl>
           </div>
         )}
 

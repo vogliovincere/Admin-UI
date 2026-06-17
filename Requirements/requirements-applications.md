@@ -254,6 +254,22 @@ The bank-account / Socure card in the detail view has the following requirements
   shall not be clickable/navigable.
 
 ---
+
+## 1M. Global RBAC: Applications tab access
+
+> **Ticket G1.**
+
+- 1M.1 The system shall require the **"Compliance" RBAC role** for a user to even
+  **view the Applications tab** in the admin navigation.
+- 1M.2 Users without the Compliance role shall not see or be able to navigate to the
+  Applications tab. The tab shall not be rendered or accessible to non-Compliance
+  roles.
+- 1M.3 **Implementation note:** enforcing this RBAC gate is a **separate ticket** and
+  has **no demo impact** in the current build. The current demo may render the
+  Applications tab without RBAC enforcement; this requirement documents the intended
+  production behavior for a future ticket.
+
+---
 ---
 
 # PART 2 — CLIENT VIEW (Applicant Onboarding)
@@ -398,3 +414,13 @@ View.
   label) is viewable in the Admin detail view.
 - **AC2 (no decisioning in client).** *Given* Client View, *then* no KYC/KYB/AML
   decision is rendered there.
+
+### Epic APP-13 — Global RBAC: Applications tab access (ticket G1)
+- **AC1 (compliance role required).** *Given* a user without the "Compliance" RBAC
+  role, *then* the Applications tab is **not visible and not navigable** for that
+  user.
+- **AC2 (compliance role grants access).** *Given* a user with the "Compliance" RBAC
+  role, *then* the Applications tab is visible and accessible.
+- **AC3 (demo / separate ticket note).** This RBAC gate is a **separate ticket** and
+  has **no demo impact** in the current build. The current demo build is not required
+  to enforce this gate; the AC is recorded here for the production implementation.
