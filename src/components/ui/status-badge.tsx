@@ -82,11 +82,17 @@ const personBadgeVariants: Record<PersonVerificationBadge, { label: string; vari
 };
 
 export function SessionStatusBadge({ status }: { status: SessionStatus }) {
-  const e = sessionStatusVariants[status];
+  const e =
+    sessionStatusVariants[status] ??
+    ({ label: String(status ?? "Unknown"), variant: "default" } as const);
   return <Badge variant={e.variant}>{e.label}</Badge>;
 }
 
 export function PersonBadge({ badge }: { badge: PersonVerificationBadge }) {
-  const e = personBadgeVariants[badge];
+  // Defensive: never crash the page if a person arrives with a missing/unknown
+  // badge value (e.g. data drift); fall back to a neutral chip.
+  const e =
+    personBadgeVariants[badge] ??
+    ({ label: String(badge ?? "Unknown"), variant: "default" } as const);
   return <Badge variant={e.variant}>{e.label}</Badge>;
 }

@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { Search, ChevronDown, RefreshCw, Eye, Download } from "lucide-react";
 import { mockApplications } from "@/lib/mock-data";
 import { OnboardingStatus } from "@/types";
@@ -37,6 +38,7 @@ export default function ApplicationsPage() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<OnboardingStatus | "all">("all");
   const { clientApp, appOverrides } = useDemoState();
+  const router = useRouter();
 
   const allApps = [
     ...mockApplications,
@@ -138,7 +140,7 @@ export default function ApplicationsPage() {
                 key={app.id}
                 className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                 onClick={() => {
-                  window.location.href = `/admin/applications/${app.id}`;
+                  router.push(`/admin/applications/${app.id}`);
                 }}
               >
                 <td className="px-4 py-3">

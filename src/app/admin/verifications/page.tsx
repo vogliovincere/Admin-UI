@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import {
   Search,
   ChevronDown,
@@ -168,6 +169,7 @@ function SortHeader({
 export default function VerificationsPage() {
   const { sessions: verificationSessions, logExport, exportLog } =
     useVerifications();
+  const router = useRouter();
   const [exportMenuOpen, setExportMenuOpen] = useState(false);
   const [search, setSearch] = useState("");
   const [primaryFilter, setPrimaryFilter] = useState("");
@@ -540,7 +542,7 @@ export default function VerificationsPage() {
                   key={s.id}
                   className="hover:bg-gray-50/50 transition-colors cursor-pointer"
                   onClick={() => {
-                    window.location.href = `/admin/verifications/${s.id}`;
+                    router.push(`/admin/verifications/${s.id}`);
                   }}
                 >
                   {/* Legal Entity Being Verified (A.2.1): solo → applicant name,
