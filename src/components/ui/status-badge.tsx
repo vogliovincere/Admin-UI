@@ -64,7 +64,7 @@ const sessionStatusVariants: Record<SessionStatus, { label: string; variant: Bad
   abandoned: { label: "Abandoned", variant: "default" },
   submitted: { label: "Submitted", variant: "info" },
   screening_in_progress: { label: "Screening In Progress", variant: "warning" },
-  pending_review: { label: "Pending Review", variant: "warning" },
+  manual_review: { label: "Manual Review", variant: "warning" },
   approved: { label: "Approved", variant: "success" },
   denied: { label: "Denied", variant: "danger" },
   partially_verified: { label: "Partially Verified", variant: "warning" },

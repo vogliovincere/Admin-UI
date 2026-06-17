@@ -19,7 +19,9 @@ import {
 import { verificationSessions } from "@/lib/verification-data";
 
 // Distinct storage key — must NOT collide with demo-state keys (risk §8.1).
-const STORAGE_KEY = "interro-verifications-state";
+// Versioned: bumped to -v2 when the `pending_review` → `manual_review` status
+// rename landed, so stale cached state (with the old value) is discarded on load.
+const STORAGE_KEY = "interro-verifications-state-v2";
 
 // The admin actor attributed to all admin-initiated actions (mock).
 const ADMIN_ACTOR_NAME = "Marco Cesaratto";
@@ -113,27 +115,79 @@ function subjectFor(
   };
 }
 
-// Recompute the session status from per-person badges after an EDD outcome.
+// ───────────────── Session-status inference ladder ─────────────────
+// Per-person/entity statuses are sourced from the KYC microservice; a joint/entity
+// session has no single status, so it is DEDUCED from the collection of its parties'
+// statuses. This implements the full precedence ladder documented in
+// architecture-verifications §1.2 / kyc-ui-admin-requirements §A.4.2.2.
+
+// The nine statuses the KYC microservice can emit.
+type PartyStatus =
+  | "documentsPending"
+  | "pending"
+  | "inProgress"
+  | "underReview"
+  | "error"
+  | "success"
+  | "denied"
+  | "cancelled"
+  | "expired";
+
+// Map the app's per-person badge (the per-party state the UI carries) onto the
+// microservice party-status vocabulary the ladder operates over.
+function badgeToPartyStatus(badge: PersonVerificationBadge): PartyStatus {
+  switch (badge) {
+    case "denied":
+      return "denied";
+    case "under_review":
+      return "underReview";
+    case "approved":
+      return "success";
+    case "expired":
+      return "expired";
+    case "in_progress":
+      return "inProgress";
+    case "not_started":
+    case "link_sent":
+    default:
+      return "documentsPending"; // still collecting data / awaiting completion
+  }
+}
+
+// The complete ladder — first matching rule wins, exhaustive over the nine
+// statuses. `error`/`cancelled` have no dedicated session label in the demo's
+// vocabulary, so they fold into `screening_in_progress` (retryable) and
+// `abandoned` respectively while staying visible on the offending party.
+export function deriveSessionStatus(parties: PartyStatus[]): SessionStatus {
+  const any = (s: PartyStatus) => parties.includes(s);
+  const all = (s: PartyStatus) =>
+    parties.length > 0 && parties.every((p) => p === s);
+
+  if (any("denied")) return "denied"; // 1. any blocked party blocks the account
+  if (any("underReview")) return "manual_review"; // 2. EDD entry point
+  if (any("error")) return "screening_in_progress"; // 3. undecidable until /retry
+  if (all("success")) return "approved"; // 4. clears only when EVERY party passes
+  if (any("success")) return "partially_verified"; // 5. some done, others not
+  if (any("documentsPending")) return "in_progress"; // 6. least-complete bottleneck
+  if (any("pending")) return "submitted"; // 7. all submitted; ≥1 queued
+  if (any("inProgress")) return "screening_in_progress"; // 8. ≥1 actively screening
+  if (all("cancelled")) return "abandoned"; // 9a. all cancelled
+  return "expired"; // 9b. only lapsed parties remain, no successes
+}
+
+// Recompute the session status after an EDD outcome (or any per-person change).
 // Keeps aggregate tone and status badge coherent (risk §8.7).
 function recomputeStatus(
   session: VerificationSession,
   prevStatus: SessionStatus
 ): SessionStatus {
-  // Only recompute for statuses that reflect an in-flight verification.
-  // Terminal/admin statuses (denied, expired, abandoned) are left as-is
-  // unless explicitly changed elsewhere.
+  // Time-based session states take precedence over the in-flight rungs and are
+  // left as-is unless explicitly changed elsewhere (architecture-verifications §1.2).
   if (prevStatus === "expired" || prevStatus === "abandoned") {
     return prevStatus;
   }
-  const badges = session.persons.map((p) => p.badge);
-  const anyDenied = badges.some((b) => b === "denied");
-  const allApproved = badges.every((b) => b === "approved");
-  if (anyDenied) return "denied";
-  if (allApproved) return "approved";
-  if (badges.some((b) => b === "under_review")) {
-    return "pending_review";
-  }
-  return "partially_verified";
+  const parties = session.persons.map((p) => badgeToPartyStatus(p.badge));
+  return deriveSessionStatus(parties);
 }
 
 // Immutably patch a single person within a session and append a timeline entry.

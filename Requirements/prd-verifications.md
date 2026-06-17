@@ -15,7 +15,7 @@ The Interro **admin UI** is a Next.js 16 (App Router) + React 19 + Tailwind v4 +
 
 This PRD adds a new top-level feature — **Verifications (KYC)** — that gives ops a way to search, browse, and act on **verification sessions** (the per-applicant KYC/KYB runs that feed onboarding). It also natively absorbs the **Enhanced Due Diligence (EDD)** collection flow that currently lives as a separate Vite prototype (`app-edd/`), so the full EDD loop runs inside admin and writes its outcome back into the verification session timeline.
 
-The feature consolidates four KYC-UI admin tickets — **PD-141** (session index + detail), **PD-145** (multi-person coordination), **PD-144** (return for corrections), and **PD-146** (export). PD-142 and PD-143 are scrapped and carry no requirements.
+The feature consolidates the KYC-UI admin tickets — **PD-141** (session index + detail), **PD-145** (multi-person coordination), and **PD-146** (export). **PD-144 (return for corrections) is scrapped** and carries no requirements; PD-142 and PD-143 are also scrapped.
 
 ### 1.2 Goals
 
@@ -40,7 +40,6 @@ This is a **clickable demo with fully in-memory state** — there is no backend 
 - Verification **session** data model + mock data (Solo, Joint, Entity sessions).
 - PD-141 session index + detail.
 - PD-145 multi-person status, link management, aggregate progress.
-- PD-144 return-for-corrections modal + status.
 - PD-146 CSV export (session + per-person), PII gating, export audit log.
 - Native port of `app-edd/` (Console POV A + Collection POV B) into the Next.js admin, entered from the session detail view (A1 queue is bent away).
 
@@ -72,9 +71,9 @@ This is a **clickable demo with fully in-memory state** — there is no backend 
 
 - **FR1** — Admin can browse all verification sessions across all organizations in a filterable, sortable, paginated table sorted most-recently-created first.
 - **FR2** — Admin can open any session to a detail view showing header, primary applicant (masked identity with reveal), additional persons (Joint/Entity), entity info (Entity), per-person KYC status, and a chronological audit timeline.
-- **FR3** — Session status reflects one of the 10 defined values (§E1.4) and is shown in both index and detail.
+- **FR3** — Session status reflects one of the 9 defined values (§E1.0) and is shown in both index and detail. Per-person/entity statuses are grabbed from the KYC microservice; the session status is **deduced** from the collection of its parties' statuses (see §E1.0).
 - **FR4** — For Joint/Entity sessions, admin can track per-person status (8 badges), view/resend/regenerate/revoke verification links, and see an aggregate "X of Y verified" indicator (color-coded) in both index and detail.
-- **FR5** — Admin can return a session for corrections via a confirmation modal (required reason, optional emailed link); the session moves to a distinct "Returned for Corrections" status and the event is logged.
+- **FR5** — *(Removed.)* The "Return for Corrections" flow and its status have been scrapped for this demo. No button, status, modal, label, or audit event references "Return for Corrections" / "Returned for Corrections" anywhere.
 - **FR6** — Admin can export the filtered session list to CSV at session level and (for Joint/Entity) at per-person level; SSN/Tax ID is included only with PII export permission; every export is logged.
 - **FR7** — Admin can initiate EDD from the session detail view (per-person for Entity/Joint; session-level for Solo), build/send a request, simulate the recipient collection, re-run EDD, and have the outcome written back into the session timeline.
 
@@ -110,7 +109,7 @@ The EDD request object retains the prototype's fields and lifecycle: `draft → 
 
 ## 7. Epic Breakdown
 
-**Sequencing:** **E1 first** (it is independently demoable and is the foundation). Then **E2 (multi-person)**, then **E3 (EDD-from-detail)** which depends on **E1 + E2**, then **E4 (return for corrections)** and **E5 (export)**. E4 and E5 depend on E1 (E5 also benefits from E2's per-person data for the per-person export).
+**Sequencing:** **E1 first** (it is independently demoable and is the foundation). Then **E2 (multi-person)**, then **E3 (EDD-from-detail)** which depends on **E1 + E2**, then **E5 (export)**. E5 depends on E1 (and benefits from E2's per-person data for the per-person export). **E4 (return for corrections) is removed.**
 
 ```
 E1 Foundation ──► E2 Multi-person ──► E3 EDD-from-detail (needs E1+E2)
@@ -125,26 +124,34 @@ E1 Foundation ──► E2 Multi-person ──► E3 EDD-from-detail (needs E1+E
 
 **Goal:** Establish the Verifications data model, mock data, and a fully demoable session index and session detail view. This epic must be shippable and demoable on its own.
 
-#### E1.0 Status model (PD-141 §1.3) — the 10 session status values
+#### E1.0 Status model (PD-141 §1.3) — the 9 session status values
+
+> **Status sourcing.** Per-person and per-entity (KYB) statuses are **grabbed
+> directly from the KYC microservice** (the source of truth: `documentsPending`,
+> `pending`, `inProgress`, `underReview`→**Manual Review**, `error`, `success`,
+> `denied`, `cancelled`, `expired` — there is **no** `dataCorrectionNeeded` and **no**
+> "Returned for Corrections"). The **session status below is DEDUCED**, not fetched —
+> a solo session mirrors its one party, and joint/entity sessions are inferred from
+> the collection of their parties' statuses (`deriveSessionStatus`,
+> architecture-verifications §1.2). **Manual Review** is where ops initiate EDD.
 
 | Status | Description |
 |---|---|
-| In Progress | Session created, applicant actively completing steps. |
-| Abandoned | No activity for configurable threshold (e.g., 7 days), session not submitted. |
-| Submitted | All required data and documents provided, awaiting screening. |
-| Screening In Progress | Screening initiated, awaiting results from provider(s). |
-| Pending Review | Screening complete, awaiting Interro ops manual review. |
-| Approved | All persons verified, screening passed. |
-| Denied | Screening failed, final rejection. |
-| Returned for Corrections | Sent back to applicant with correction guidance. |
-| Partially Verified | Multi-person flow: some persons verified, others pending. |
-| Expired | Session exceeded 30-day TTL without completion. |
+| In Progress | A party still owes documents / has not yet submitted (`documentsPending`). |
+| Abandoned | No activity for a configurable threshold (e.g., 7 days), session not submitted (also covers all-cancelled). |
+| Submitted | All parties submitted, awaiting screening (`pending`). |
+| Screening In Progress | Screening initiated, awaiting provider results (`inProgress`; also where an unresolved `error` surfaces pending retry). |
+| Manual Review | Screening complete, routed to manual review (`underReview`); the point at which ops initiate EDD. |
+| Approved | All parties verified, screening passed (`success`). |
+| Denied | Any party denied — a single blocked party blocks the account. |
+| Partially Verified | Multi-person flow: some parties verified, others still in flight or lapsed. |
+| Expired | Session exceeded 30-day TTL / only lapsed parties remain without completion. |
 
 #### Story E1.1 — Types & mock data
 **As a** developer, **I want** verification session types and seed data, **so that** the index and detail views render realistic content.
-- **AC1:** New types added to `src/types/index.ts`: `VerificationSession`, `SessionPerson`, `PathType = "solo" | "joint" | "entity"`, `SessionStatus` (10 values above), `PersonRole = "primary" | "co_holder" | "ubo" | "control_person"`, `PersonVerificationBadge` (8 values, see E2), `SessionTimelineEntry`. Reuse `Address`, `ControlPerson`, `UBO`, `DocumentUpload` where they fit.
+- **AC1:** New types added to `src/types/index.ts`: `VerificationSession`, `SessionPerson`, `PathType = "solo" | "joint" | "entity"`, `SessionStatus` (9 values above), `PersonRole = "primary" | "co_holder" | "ubo" | "control_person"`, `PersonVerificationBadge` (8 values, see E2), `SessionTimelineEntry`. Reuse `Address`, `ControlPerson`, `UBO`, `DocumentUpload` where they fit.
 - **AC2:** Person/entity fields are grounded in `interro_client_onboarding_fieldsv1.md`: entity identity (legal name, DBA, principal address, EIN / non-US tax id + issuing country, file/registration number, country/state of registration), authorized reps (name, title, email, phone, photo ID), UBOs/control persons (name, DOB, residential address, ownership %, role/control function, SSN/non-US ID, photo ID), account purpose/profile, screening acknowledgments.
-- **AC3:** `src/lib/mock-data.ts` seeds at least: 2 Solo, 2 Joint, 3 Entity sessions, spanning a variety of the 10 statuses, multiple organizations, and including persons with each of the 8 verification badges. Entity sessions include `recommendedItemIds` per person to seed EDD later (E3).
+- **AC3:** `src/lib/mock-data.ts` seeds at least: 2 Solo, 2 Joint, 3 Entity sessions, spanning a variety of the 9 statuses, multiple organizations, and including persons with each of the 8 verification badges. Entity sessions include `recommendedItemIds` per person to seed EDD later (E3).
 - **AC4:** `typecheck` and `lint` pass.
 
 #### Story E1.2 — Session index (list view) (PD-141 §1.1)
@@ -265,26 +272,16 @@ E1 Foundation ──► E2 Multi-person ──► E3 EDD-from-detail (needs E1+E
 
 ---
 
-### EPIC E4 — Return for Corrections (PD-144)
+### EPIC E4 — Return for Corrections (PD-144) — **REMOVED**
 
-**Goal:** Let ops return a session to the applicant for corrections with a reason and optional emailed link, recording a distinct status. **Depends on E1.**
+> **Scrapped for this demo.** The entire Return-for-Corrections flow and its
+> "Returned for Corrections" status have been removed from the Verifications
+> feature — no button, status, modal, label, or audit event references it anywhere
+> (mirrors the Applications-tab decision in `requirements-applications.md` §1K /
+> APP-10). There is likewise no `dataCorrectionNeeded` status; correction loops are
+> not part of this model.
 
-#### Story E4.1 — Return-for-corrections trigger & modal
-**As an** ops user, **I want** to return a session for corrections, **so that** an applicant can fix human-error data and resubmit.
-- **AC1:** Session detail view has a "Return for Corrections" button.
-- **AC2:** Clicking it opens a confirmation modal before any action is taken (the modal is the final confirmation step; nothing is enacted until confirm).
-- **AC3:** Modal contains a **required** free-text reason field, with subtext explaining this is the text the applicant will see when filling out KYC/KYB again; confirm is disabled until non-empty.
-- **AC4:** Modal contains a checkbox to deliver the verification link to the applicant's email.
-- **AC5 (Given-When-Then):** *Given* the email checkbox is unchecked, *then* the email input is greyed out and not editable; *when* checked, *then* the email input becomes editable and is pre-loaded with the email the applicant entered during their session.
-
-#### Story E4.2 — Apply returned status, log, and (simulated) email
-**As an** ops user, **I want** confirming the return to record state and notify the applicant, **so that** the session reflects the correction request.
-- **AC1:** On confirm, the session moves to the distinct **"Returned for Corrections"** status (one of the 10 status values) and shows in index + detail.
-- **AC2:** If the email checkbox was checked, a (simulated) email containing the verification link is recorded as sent.
-- **AC3:** The return event, reason text, and (if applicable) email send are appended to the session audit timeline (attributed to the admin user).
-- **AC4 (demo note):** The applicant-side pre-fill, prominent reason display, and re-do-IDV behavior are documented as the intended embeddable behavior; in this admin demo the focus is recording the returned state, reason, and link send. The reason text is retained on the session so it can be surfaced to the applicant surface.
-
-**E4 story count: 2**
+**E4 story count: 0**
 
 ---
 

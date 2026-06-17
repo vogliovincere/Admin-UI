@@ -20,7 +20,7 @@ const statusLabels: Record<SessionStatus, string> = {
   abandoned: "Abandoned",
   submitted: "Submitted",
   screening_in_progress: "Screening In Progress",
-  pending_review: "Pending Review",
+  manual_review: "Manual Review",
   approved: "Approved",
   denied: "Denied",
   partially_verified: "Partially Verified",

@@ -37,7 +37,10 @@ export type PathType = "solo" | "joint" | "entity";
 
 export type PersonRole = "primary" | "co_holder" | "ubo" | "control_person";
 
-// PD-141 §1.3 — the 10 session statuses (string-union, stored verbatim)
+// PD-141 §1.3 — the 9 session statuses (string-union, stored verbatim).
+// NOTE: session statuses are DEDUCED (see §2.x deriveSessionStatus), not fetched
+// from the KYC microservice. The `pending_review` value renders as "Manual Review".
+// "returned_for_corrections" has been removed from the model entirely.
 export type SessionStatus =
   | "in_progress"
   | "abandoned"
@@ -46,7 +49,6 @@ export type SessionStatus =
   | "pending_review"
   | "approved"
   | "denied"
-  | "returned_for_corrections"
   | "partially_verified"
   | "expired";
 
@@ -70,7 +72,12 @@ export type LinkStatus =
   | "expired"
   | "revoked";
 
-// KYC microservice status reflected per person/entity (E1.3 AC5)
+// KYC microservice status reflected per person/entity (E1.3 AC5).
+// SOURCE OF TRUTH: every per-person and per-entity (KYB) status is grabbed
+// directly from the KYC microservice — the admin UI never invents them. The
+// microservice emits the statuses below (see §1.2 for the canonical list and
+// UI-display mapping). There is NO `dataCorrectionNeeded` and NO
+// `returned_for_corrections` status anywhere in the model.
 export type KycStatus =
   | "not_started"
   | "data_entered"
@@ -160,10 +167,80 @@ export interface VerificationSession {
   persons: SessionPerson[];    // [0] is always the primary applicant
   entity?: EntityInfo;         // entity sessions only
   timeline: SessionTimelineEntry[];
-  // PD-144 — retained on the session so the applicant surface can show it
-  correctionReason?: string;
 }
 ```
+
+### 1.2 Status sourcing & session-status inference
+
+**All per-person / per-entity statuses are grabbed from the KYC microservice.** The
+microservice is the single source of truth for an individual party's status; the
+admin UI reflects it and never invents one. The microservice emits exactly these
+statuses (note: **no `dataCorrectionNeeded`**, **no `returned_for_corrections`**):
+
+| KYC microservice status | Meaning | UI display |
+|---|---|---|
+| `documentsPending` | Verification created; PII accepted and pre-signed upload URLs issued. Awaiting document uploads and the explicit `/submit`. Auto-expires after 72h (3 days) if never submitted/cancelled. | In Progress |
+| `pending` | `/submit` called; accepted and queued for processing. | Submitted |
+| `inProgress` | Actively processed by data vendors through Alloy. | Screening In Progress |
+| `underReview` | All vendor checks completed but routed to a manual-review queue in Alloy; a compliance reviewer must adjudicate before a terminal status. | **Manual Review** |
+| `error` | A downstream vendor/service failure during processing; client can `/retry`. | Error |
+| `success` | Approved (auto-approved straight from `inProgress`, or after a reviewer approves). Eligible for payments. | Approved |
+| `denied` | Denied; blocked from payments. From auto-denial rules or a manual-review denial. | Denied |
+| `cancelled` | Explicitly cancelled by the client via `/cancel` while in `documentsPending`. Terminal — no recovery. | Cancelled |
+| `expired` | Auto-expired after 3 days in `documentsPending` without submit/cancel. Terminal — no recovery. | Expired |
+
+> **`underReview` → "Manual Review" is the EDD entry point.** Manual Review (renamed
+> from the former "Pending Review") is the state in which ops typically initiate
+> Enhanced Due Diligence.
+
+**A session's status is DEDUCED, not fetched.** A **solo** session has one party, so
+its session status is that party's status (mapped above). A **joint** session
+(primary + co-holders) and an **entity** session (business/KYB record + UBOs +
+control persons) have multiple parties and no single microservice status, so the
+session status is inferred from the **collection** of party statuses via this
+precedence ladder — first matching rule wins, exhaustive over the nine statuses:
+
+```ts
+// The nine statuses the KYC microservice can emit (table above).
+type KycMicroserviceStatus =
+  | "documentsPending" | "pending" | "inProgress" | "underReview"
+  | "error" | "success" | "denied" | "cancelled" | "expired";
+
+// Inputs: the microservice status of every party in the session
+//   - joint  → [primary, ...coHolders]
+//   - entity → [kybRecord, ...ubos, ...controlPersons]
+export function deriveSessionStatus(parties: KycMicroserviceStatus[]): SessionStatus {
+  const any = (s: KycMicroserviceStatus) => parties.includes(s);
+  const all = (s: KycMicroserviceStatus) => parties.every((p) => p === s);
+
+  if (any("denied"))      return "denied";                // 1. any blocked party blocks the account
+  if (any("underReview")) return "pending_review";        // 2. → "Manual Review" (EDD entry point)
+  if (any("error"))       return "screening_in_progress"; // 3. surfaced as Error per-party; account undecidable until /retry
+  if (all("success"))     return "approved";              // 4. clears only when EVERY party passes
+  if (any("success"))     return "partially_verified";    // 5. some done, others still in flight / lapsed
+  if (any("documentsPending")) return "in_progress";      // 6. bottleneck = least-complete party still owes docs
+  if (any("pending"))     return "submitted";             // 7. all submitted; ≥1 queued, none screening
+  if (any("inProgress"))  return "screening_in_progress"; // 8. ≥1 actively screening
+  if (all("cancelled"))   return "abandoned";             // 9. all parties cancelled
+  return "expired";                                       // 10. only cancelled/expired remain, no successes
+}
+```
+
+**Rationale.** The ladder is ordered **most-blocking first** (Denied → Manual Review
+→ Error) so the account surfaces the state that demands action; then the **all-clear**
+(Approved) and the **mixed** state (Partially Verified); then the **in-flight** stages
+reported at the *least-complete* party (the real bottleneck); then the
+**terminal-incomplete** states. `error` and `cancelled` have no dedicated session
+label in the demo's nine-value set, so at the aggregate they fold into
+`screening_in_progress` (work outstanding, ops retries) and `abandoned`
+respectively, while remaining visible on the offending party. This matches and
+extends the store's `recomputeStatus` (anyDenied → Denied; allApproved → Approved;
+any under-review → Manual Review; otherwise Partially Verified).
+
+> **Session-lifecycle override.** `abandoned` (no applicant activity past the
+> inactivity threshold) and session-level `expired` (30-day session TTL) are
+> time-based session states independent of the screening pipeline; when they apply
+> they take precedence over the in-flight rungs (6–8) above.
 
 ### 1.1 EDD types for the ported store (E3.1)
 
@@ -308,7 +385,7 @@ Reveal is local UI state (`useState`) per the existing Applications masking patt
 | 1 | solo | `approved` | 1 primary | clean happy path |
 | 2 | solo | `pending_review` | 1 primary | screening done, awaiting ops |
 | 3 | joint | `partially_verified` | primary + 1 co_holder | co_holder `link_sent` |
-| 4 | joint | `returned_for_corrections` | primary + 1 co_holder | `correctionReason` set |
+| 4 | joint | `pending_review` (Manual Review) | primary + 1 co_holder | co_holder `under_review` → account deduced to Manual Review |
 | 5 | entity | `screening_in_progress` | primary + 2 UBO + 1 control_person | recommendedItemIds per person |
 | 6 | entity | `submitted` | primary + 1 UBO | one UBO `error`, one `under_review` |
 | 7 | entity | `denied` | primary + 1 UBO + 1 control_person | UBO `denied` |
@@ -316,7 +393,7 @@ Reveal is local UI state (`useState`) per the existing Applications masking patt
 | 9 | joint | `expired` | primary + 1 co_holder | co_holder link `expired` |
 | 10 | entity | `approved` | primary + 2 UBO | all `approved` (full green aggregate) |
 
-Across these, every one of the **10 statuses** and every one of the **8 badges** appears at least once, across ≥3 organizations. Dates spread over the last ~40 days; `createdAt` descending is the default index sort.
+Across these, every one of the **9 session statuses** and every one of the **8 badges** appears at least once, across ≥3 organizations. Dates spread over the last ~40 days; `createdAt` descending is the default index sort.
 
 ### 2.3 Fully-worked example (entity, multi-person)
 
@@ -724,10 +801,9 @@ const sessionStatusVariants: Record<SessionStatus, { label: string; variant: Bad
   abandoned:                { label: "Abandoned",              variant: "default" },
   submitted:                { label: "Submitted",              variant: "info" },
   screening_in_progress:    { label: "Screening In Progress",  variant: "warning" },
-  pending_review:           { label: "Pending Review",         variant: "warning" },
+  pending_review:           { label: "Manual Review",          variant: "warning" },
   approved:                 { label: "Approved",               variant: "success" },
   denied:                   { label: "Denied",                 variant: "danger" },
-  returned_for_corrections: { label: "Returned for Corrections", variant: "warning" },
   partially_verified:       { label: "Partially Verified",     variant: "warning" },
   expired:                  { label: "Expired",                variant: "default" },
 };

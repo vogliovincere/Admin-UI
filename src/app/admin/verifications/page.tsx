@@ -37,7 +37,7 @@ const statusOptions: { value: SessionStatus; label: string }[] = [
   { value: "abandoned", label: "Abandoned" },
   { value: "submitted", label: "Submitted" },
   { value: "screening_in_progress", label: "Screening In Progress" },
-  { value: "pending_review", label: "Pending Review" },
+  { value: "manual_review", label: "Manual Review" },
   { value: "approved", label: "Approved" },
   { value: "denied", label: "Denied" },
   { value: "partially_verified", label: "Partially Verified" },

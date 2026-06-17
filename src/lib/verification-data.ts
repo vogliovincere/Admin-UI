@@ -118,13 +118,13 @@ export const verificationSessions: VerificationSession[] = [
     ],
   },
 
-  // 2 — solo / pending_review
+  // 2 — solo / manual_review
   {
     id: "VS-2026-0002",
     organizationId: "ORG-MERIDIAN",
     organizationName: "Meridian Wealth Partners",
     pathType: "solo",
-    status: "pending_review",
+    status: "manual_review",
     createdAt: "2026-06-03T10:00:00Z",
     submittedAt: "2026-06-03T10:48:00Z",
     lastActivityAt: "2026-06-03T11:15:00Z",
@@ -265,7 +265,7 @@ export const verificationSessions: VerificationSession[] = [
     ],
   },
 
-  // 4 — joint / pending_review
+  // 4 — joint / manual_review
   {
     id: "VS-2026-0004",
     organizationId: "ORG-HARBORLINE",
@@ -273,7 +273,7 @@ export const verificationSessions: VerificationSession[] = [
     pathType: "joint",
     jointAccountType: "Tenants in Common",
     entityName: "The Fuentes Living Trust",
-    status: "pending_review",
+    status: "manual_review",
     createdAt: "2026-05-25T12:00:00Z",
     submittedAt: "2026-05-25T13:10:00Z",
     lastActivityAt: "2026-05-27T16:45:00Z",

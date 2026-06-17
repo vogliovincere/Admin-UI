@@ -275,14 +275,69 @@ The session-level status model:
 | Abandoned | No activity for a configurable threshold; not submitted. |
 | Submitted | All required data provided, awaiting screening. |
 | Screening In Progress | Screening initiated, awaiting provider results. |
-| Pending Review | Screening complete, awaiting manual review (maps to Alloy "Manual Review"). |
-| Approved | All persons verified, screening passed. |
-| Denied | Screening failed, final rejection. |
-| Partially Verified | Multi-person: some persons verified, others pending. |
-| Expired | Session exceeded its TTL without completion. |
+| Manual Review | Screening complete, routed to a manual-review queue (Alloy `underReview`); the point at which ops initiate EDD. |
+| Approved | All persons/parties verified, screening passed. |
+| Denied | Any party denied — a single blocked party blocks the account. |
+| Partially Verified | Multi-person: some parties verified, others still in flight or lapsed. |
+| Expired | Session exceeded its TTL / only lapsed parties remain without completion. |
 
-> **Removed status.** "Returned for Corrections" is **no longer a session status**
-> and has been removed from the model entirely.
+> **Renamed.** The former **"Pending Review"** status is now **"Manual Review"**
+> (the state in which ops typically initiate EDD).
+>
+> **Removed statuses.** "Returned for Corrections" is **no longer a session status**
+> and has been removed from the model entirely. There is likewise **no "Data
+> Correction Needed" (`dataCorrectionNeeded`) status** — correction loops are not
+> part of this model.
+
+#### A.4.2.1 Status sourcing — all per-person/entity statuses come from the KYC microservice
+
+Every per-person and per-entity (KYB) status shown in the Verifications tab is
+**grabbed directly from the KYC microservice** — the microservice is the single
+source of truth for an individual party's status; the admin UI reflects it and never
+invents one. The microservice emits exactly these statuses:
+
+| KYC microservice status | Meaning | UI display |
+| --- | --- | --- |
+| documentsPending | Verification created; PII accepted and pre-signed upload URLs issued. Awaiting document uploads and the explicit `/submit`. Auto-expires after 72h (3 days) if never submitted/cancelled. | In Progress |
+| pending | `/submit` called; accepted and queued for processing. | Submitted |
+| inProgress | Actively processed by data vendors through Alloy. | Screening In Progress |
+| underReview | All vendor checks completed but routed to a manual-review queue in Alloy; a compliance reviewer must adjudicate before a terminal status. | **Manual Review** |
+| error | A downstream vendor/service failure during processing; client can `/retry`. | Error |
+| success | Approved (auto-approved straight from inProgress, or after a reviewer approves). Eligible for payments. | Approved |
+| denied | Denied; blocked from payments. From auto-denial rules or a manual-review denial. | Denied |
+| cancelled | Explicitly cancelled by the client via `/cancel` while in documentsPending. Terminal — no recovery. | Cancelled |
+| expired | Auto-expired after 3 days in documentsPending without submit/cancel. Terminal — no recovery. | Expired |
+
+> **Manual Review = EDD entry point.** `underReview` (displayed as **"Manual
+> Review"**) is the state in which ops initiate Enhanced Due Diligence.
+> **No** `dataCorrectionNeeded` and **no** "Returned for Corrections" exist anywhere.
+
+#### A.4.2.2 Joint-account & entity status is *deduced* from its parties
+
+A **solo** session has one party, so its session status is that party's microservice
+status (mapped above). A **joint** session (primary + co-holders) and an **entity**
+session (the business/KYB record + UBOs + control persons) have multiple parties and
+no single microservice status, so the session status is **inferred from the
+collection** of its parties' statuses via this precedence ladder — first matching
+rule wins, exhaustive over the nine statuses:
+
+1. **Any party `denied` → Denied.** A single blocked party (e.g. a sanctioned UBO or rejected co-holder) blocks the entire account; nothing overrides a denial.
+2. **Else any party `underReview` → Manual Review.** Any party awaiting manual adjudication holds the whole account for review — and is where EDD is initiated.
+3. **Else any party `error` → (surfaced as the account still in screening).** A vendor/service failure on any party leaves the account undecidable until ops `/retry`; the error stays visible on the offending party.
+4. **Else all parties `success` → Approved.** The account clears only when *every* party passes.
+5. **Else at least one party `success` (mixed with in-flight/lapsed parties) → Partially Verified.** Some parties are done while others are not — the defining multi-party state.
+6. **Else any party `documentsPending` → In Progress.** No party is done and at least one still owes documents — the account is still being assembled (bottleneck = the least-complete party).
+7. **Else any party `pending` → Submitted.** All parties submitted; at least one queued, none screening yet.
+8. **Else any party `inProgress` → Screening In Progress.** At least one party actively screening.
+9. **Else all `cancelled` → Abandoned; otherwise → Expired** (only lapsed parties remain, no successes).
+
+The ladder is ordered **most-blocking first** (Denied → Manual Review → Error), then
+the **all-clear** (Approved) and **mixed** (Partially Verified) states, then the
+**in-flight** stages reported at the *least-complete* party (the real bottleneck),
+then **terminal-incomplete** states. (`abandoned` from inactivity and session-level
+`expired` from the 30-day TTL are time-based and take precedence over the in-flight
+rungs.) See `deriveSessionStatus` in architecture-verifications §1.2 for the exact
+algorithm.
 
 ### A.4.3 Per-person verification badges
 The per-person verification badges are exactly:

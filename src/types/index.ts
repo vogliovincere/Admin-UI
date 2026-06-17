@@ -207,7 +207,7 @@ export type SessionStatus =
   | "abandoned"
   | "submitted"
   | "screening_in_progress"
-  | "pending_review"
+  | "manual_review"
   | "approved"
   | "denied"
   | "partially_verified"
